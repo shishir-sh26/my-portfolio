@@ -9,17 +9,6 @@ import {
   Terminal, Database, LayoutTemplate, Server, Smartphone, Layers, ArrowLeft, FileText,
   Cpu, Globe, Zap
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-// --- SAFE SPLINE IMPORT ---
-const Spline = dynamic(() => import('@splinetool/react-spline'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full bg-[#050505] flex items-center justify-center text-gray-500 animate-pulse">
-      Loading 3D Experience...
-    </div>
-  ),
-});
 
 // --- IMPORT THE PLAYGROUND PAGE ---
 import PlaygroundPage from './components/PlaygroundPage';
@@ -33,15 +22,21 @@ const damp3 = (target, to, speed, delta) => {
   target.z += (to[2] - target.z) * speed * delta * 60;
 };
 
-// --- SPLINE BACKGROUND ---
-const SplineBackground = () => {
+// --- SCROLLING BACKGROUND IMAGE ---
+// Uses the requested "Rocky formation under a starry night sky" theme
+const ScrollingBackground = () => {
   return (
-    <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
-      {/* Updated Scene URL */}
-      <Spline
-        scene="https://prod.spline.design/stQIpz-MrYw-aNXU/scene.splinecode"
-        className="w-full h-full"
+    <div className="absolute inset-0 w-full h-full z-[-1] pointer-events-none">
+      <img 
+        src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?q=80&w=2076&auto=format&fit=crop" 
+        alt="Rocky Formation Starry Night" 
+        className="w-full h-full object-cover opacity-50"
       />
+      
+      {/* Gradient Overlays for Readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505]/80" />
+      <div className="absolute inset-0 bg-black/40" /> {/* General dimming */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
     </div>
   );
 };
@@ -201,9 +196,9 @@ const SkillsPage = ({ goBack }) => {
 };
 
 // --- NEW COMPONENT: Interactive Hover Card for About Section ---
-const HoverCard = ({ title, desc, icon: Icon, color, delay }) => (
+const HoverCard = ({ title, desc, icon: Icon, color }) => (
   <div 
-    className={`group relative p-8 rounded-3xl bg-white/5 border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-2`}
+    className={`group relative p-8 rounded-3xl bg-black/40 border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-2 backdrop-blur-md`}
   >
     {/* Gradient Background Effect */}
     <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${color}`} />
@@ -220,15 +215,16 @@ const HoverCard = ({ title, desc, icon: Icon, color, delay }) => (
   </div>
 );
 
-// --- LANDING PAGE (With Spline Background) ---
+// --- LANDING PAGE ---
 const LandingPage = ({ onNavigate }) => {
   return (
     <>
-      {/* HOME SECTION - Removed overflow-hidden to allow scrolling */}
-      <section id="home" className="relative min-h-screen flex items-center pt-20 bg-[#050505]">
-        
-        <SplineBackground />
+      {/* GLOBAL SCROLLING BACKGROUND (Visible across all sections) */}
+      <ScrollingBackground />
 
+      {/* HOME SECTION */}
+      <section id="home" className="relative min-h-screen flex items-center pt-20">
+        
         {/* Content Overlay - LEFT ALIGNED */}
         <div className="w-full px-6 md:px-20 relative z-10 text-left pointer-events-none">
           
@@ -238,7 +234,7 @@ const LandingPage = ({ onNavigate }) => {
           </h1>
 
           {/* Subtitle - Monospace and Smaller */}
-          <p className="max-w-2xl text-sm md:text-base text-gray-300 mb-10 leading-relaxed font-mono tracking-wide bg-black/30 backdrop-blur-md p-4 rounded-lg border-l-4 border-cyan-500">
+          <p className="max-w-2xl text-sm md:text-base text-gray-300 mb-10 leading-relaxed font-mono tracking-wide bg-black/40 backdrop-blur-md p-4 rounded-lg border-l-4 border-cyan-500">
             AI/ML Developer | Experienced in PyTorch, NLP, and Full-Stack Application Deployment.
           </p>
           
@@ -264,12 +260,9 @@ const LandingPage = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* ABOUT SECTION - Big, Attractive, and Interactive */}
-      <section id="about" className="relative min-h-screen flex items-center py-24 bg-[#050505]">
-        {/* Background Glows */}
-        <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-20 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
-
+      {/* ABOUT SECTION - Transparent background to show image */}
+      <section id="about" className="relative min-h-screen flex items-center py-24">
+        
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <div className="mb-20">
             <h2 className="text-5xl md:text-7xl font-bold text-white mb-6">
@@ -278,7 +271,7 @@ const LandingPage = ({ onNavigate }) => {
                 The Future
               </span>
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl leading-relaxed">
+            <p className="text-xl text-gray-300 max-w-2xl leading-relaxed font-medium bg-black/30 backdrop-blur-sm p-4 rounded-xl">
               I bridge the gap between complex machine learning models and intuitive user interfaces.
               Building systems that are as beautiful as they are intelligent.
             </p>
@@ -326,8 +319,8 @@ const LandingPage = ({ onNavigate }) => {
       </section>
       
       {/* Selected Work */}
-      <section id="work" className="py-24 bg-[#0f0f0f]">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="work" className="py-24 relative">
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
             <div>
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Selected Work</h2>
@@ -335,9 +328,9 @@ const LandingPage = ({ onNavigate }) => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[{ title: "Neon Finance", color: "from-blue-500 to-cyan-500" }, { title: "Aura Spaces", color: "from-purple-500 to-pink-500" }, { title: "Nexus API", color: "from-emerald-500 to-teal-500" }].map((project, i) => (
-              <div key={i} className="group relative rounded-2xl overflow-hidden aspect-[4/3] cursor-pointer">
+              <div key={i} className="group relative rounded-2xl overflow-hidden aspect-[4/3] cursor-pointer border border-white/10 hover:border-white/30 transition-all">
                 <div className={`absolute inset-0 bg-gradient-to-br ${project.color} opacity-20 group-hover:opacity-30 transition-opacity`} />
-                <div className="absolute inset-0 bg-[#111] m-[1px] rounded-2xl p-8 flex flex-col justify-end">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md m-[1px] rounded-2xl p-8 flex flex-col justify-end">
                   <h3 className="text-2xl font-bold text-white mb-2">{project.title}</h3>
                 </div>
               </div>
@@ -347,14 +340,14 @@ const LandingPage = ({ onNavigate }) => {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 relative overflow-hidden bg-[#050505]">
+      <section id="contact" className="py-24 relative">
         <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-4xl md:text-6xl font-bold text-white mb-8">Let's work together.</h2>
           <a href="mailto:hello@example.com" className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-cyan-400 transition-colors duration-300 text-lg">
             <Mail size={20} /> Get in Touch
           </a>
         </div>
-        <footer className="mt-24 border-t border-white/10 pt-12 pb-8 text-center text-gray-600 text-sm">
+        <footer className="mt-24 border-t border-white/10 pt-12 pb-8 text-center text-gray-600 text-sm relative z-10">
           <p>&copy; {new Date().getFullYear()} Moncy-style Portfolio. Built with Next.js & Tailwind.</p>
         </footer>
       </section>
@@ -402,7 +395,6 @@ const App = () => {
     }
   };
 
-  // Updated NavLink with modern Pill Style
   const NavLink = ({ label, targetId, onClick }) => (
     <button
       onClick={onClick}
@@ -417,10 +409,9 @@ const App = () => {
   );
 
   return (
-    // REMOVED overflow-hidden from the main container to ensure scrolling works
-    <div className="min-h-screen bg-[#050505] text-gray-200 font-sans selection:bg-cyan-500/30">
+    <div className="relative min-h-screen text-gray-200 font-sans selection:bg-cyan-500/30">
       
-      {/* Navigation - IMPROVED: Floating Glassmorphic Design */}
+      {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? 'py-4' : 'py-6'
       }`}>

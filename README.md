@@ -1,4 +1,4 @@
-My portfolio made with next.js and ts
+My portfolio made with next.js, threejs and ts
 
 ```bash
 npm run dev

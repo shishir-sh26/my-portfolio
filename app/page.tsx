@@ -327,7 +327,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
           </div>
         </div>
         <footer className="mt-32 border-t border-white/10 pt-12 pb-8 text-center text-gray-600 text-sm relative z-10">
-          <p>&copy; {new Date().getFullYear()} Moncy-style Portfolio. Built with Next.js & Tailwind.</p>
+          <p>&copy; {new Date().getFullYear()} Portfolio. Built with Next.js & Tailwind.</p>
         </footer>
       </section>
 

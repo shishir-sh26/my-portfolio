@@ -7,11 +7,29 @@ import * as THREE from 'three';
 import { 
   Github, Twitter, Linkedin, Mail, ExternalLink, Code2, Palette, 
   Terminal, Database, LayoutTemplate, Server, Smartphone, Layers, ArrowLeft, FileText,
-  Cpu, Globe, Zap
+  Cpu, Globe, Zap, Send, Instagram, Wifi
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
-// --- IMPORT THE PLAYGROUND PAGE ---
+// --- IMPORTS ---
 import PlaygroundPage from './components/PlaygroundPage';
+import TargetCursor from './components/TargetCursor';
+
+// Dynamic imports for 3D backgrounds to avoid SSR issues
+const GridScan = dynamic(() => import('./components/GridScan'), { 
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black z-[-1]" />
+});
+
+const FloatingLines = dynamic(() => import('./components/FloatingLines'), { 
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-black" />
+});
+
+// --- NEW VANTA BACKGROUND IMPORT ---
+const VantaBackground = dynamic(() => import('./components/VantaBackground'), {
+  ssr: false,
+});
 
 // --- 1. SHARED COMPONENTS & UTILS ---
 
@@ -22,166 +40,56 @@ const damp3 = (target, to, speed, delta) => {
   target.z += (to[2] - target.z) * speed * delta * 60;
 };
 
-// --- SCROLLING BACKGROUND IMAGE ---
-// Uses the requested "Rocky formation under a starry night sky" theme
-const ScrollingBackground = () => {
-  return (
-    <div className="absolute inset-0 w-full h-full z-[-1] pointer-events-none">
-      <img 
-        src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?q=80&w=2076&auto=format&fit=crop" 
-        alt="Rocky Formation Starry Night" 
-        className="w-full h-full object-cover opacity-50"
-      />
-      
-      {/* Gradient Overlays for Readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505]/80" />
-      <div className="absolute inset-0 bg-black/40" /> {/* General dimming */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-    </div>
-  );
-};
-
-// --- 2. LOCAL 3D COMPONENTS (For Skills Page Overlay) ---
-
-const BackgroundScene = () => {
-  const group = useRef();
-  
-  useFrame((state) => {
-    if (group.current) {
-      group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.1) * 0.2;
-      group.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.15) * 0.1;
-    }
-  });
-
-  return (
-    <group ref={group}>
-      <mesh position={[0, 0, -10]}>
-        <planeGeometry args={[40, 40]} />
-        <meshBasicMaterial color="#050505" />
-      </mesh>
-      
-      <mesh position={[-4, 2, -5]}>
-        <torusKnotGeometry args={[1.5, 0.4, 128, 32]} />
-        <meshBasicMaterial color="#a855f7" /> 
-      </mesh>
-      <mesh position={[5, -2, -8]}>
-        <sphereGeometry args={[2, 32, 32]} />
-        <meshBasicMaterial color="#22d3ee" /> 
-      </mesh>
-      <mesh position={[-3, -5, -6]}>
-        <icosahedronGeometry args={[1.8, 0]} />
-        <meshBasicMaterial color="#ec4899" /> 
-      </mesh>
-      <mesh position={[4, 4, -7]}>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshBasicMaterial color="#3b82f6" /> 
-      </mesh>
-
-      <Text
-        position={[0, 0, -4]}
-        fontSize={2.5}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        fontWeight="bold"
-        letterSpacing={-0.05}
-      >
-        TECHNICAL SKILLS
-      </Text>
-    </group>
-  );
-};
-
-const FluidGlassLens = ({ followPointer = true }) => {
-  const ref = useRef();
-  const buffer = useFBO();
-  const { viewport } = useThree();
-  const scene = useMemo(() => new THREE.Scene(), []);
-
-  useFrame((state, delta) => {
-    const { gl, camera, pointer } = state;
-    const v = viewport.getCurrentViewport(camera, [0, 0, 15]);
-    const destX = followPointer ? (pointer.x * v.width) / 2 : 0;
-    const destY = followPointer ? (pointer.y * v.height) / 2 : 0;
-    
-    if (ref.current) {
-      damp3(ref.current.position, [destX, destY, 2], 0.15, delta);
-      ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, destY * 0.1 + Math.PI/2, 0.1);
-      ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, destX * 0.1, 0.1);
-    }
-
-    gl.setRenderTarget(buffer);
-    gl.render(scene, camera);
-    gl.setRenderTarget(null);
-  });
-
-  return (
-    <>
-      {createPortal(<BackgroundScene />, scene)}
-      <mesh scale={[viewport.width, viewport.height, 1]} position={[0, 0, -1]}>
-        <planeGeometry />
-        <meshBasicMaterial map={buffer.texture} />
-      </mesh>
-      <mesh ref={ref} position={[0, 0, 2]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[2.8, 2.8, 0.3, 64]} />
-        <MeshTransmissionMaterial
-          buffer={buffer.texture}
-          ior={1.2}
-          thickness={3.0}
-          anisotropy={0.2}
-          chromaticAberration={0.06}
-          roughness={0.05}
-          distortion={0.5}
-          distortionScale={0.4}
-          temporalDistortion={0.1}
-        />
-      </mesh>
-    </>
-  );
-};
-
 // --- 3. PAGE COMPONENTS ---
 
-const SkillsPage = ({ goBack }) => {
+const SkillsPage = ({ goBack }: { goBack: () => void }) => {
+  // Updated Skills Data
   const skills = [
-    { name: "Frontend", icon: LayoutTemplate, items: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Three.js"] },
-    { name: "Backend", icon: Server, items: ["Node.js", "Python", "PostgreSQL", "GraphQL", "Supabase"] },
-    { name: "Mobile", icon: Smartphone, items: ["React Native", "Expo", "Flutter", "iOS", "Android"] },
-    { name: "Tools", icon: Layers, items: ["Git", "Docker", "AWS", "Figma", "Jest"] }
+    { name: "Frontend", icon: LayoutTemplate, items: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Three.js", "Framer Motion"] },
+    { name: "Backend", icon: Server, items: ["Node.js", "Python", "PostgreSQL", "GraphQL", "Supabase", "FastAPI"] },
+    { name: "AI & ML", icon: Cpu, items: ["PyTorch", "TensorFlow", "NLP", "OpenCV", "Scikit-learn", "Keras"] },
+    { name: "IoT & Embedded", icon: Wifi, items: ["Arduino", "Raspberry Pi", "ESP32", "MQTT", "Sensors", "Automation"] }
   ];
 
   return (
     <div className="fixed inset-0 z-50 bg-[#050505] overflow-hidden">
       <button 
         onClick={goBack}
-        className="absolute top-6 left-6 z-[60] flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 cursor-pointer pointer-events-auto"
+        className="cursor-target absolute top-6 left-6 z-[60] flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 pointer-events-auto"
       >
         <ArrowLeft size={20} /> Back to Home
       </button>
 
+      {/* CONNECTED FLOATING LINES BACKGROUND */}
       <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 15], fov: 25 }} gl={{ alpha: false, antialias: true }}>
-          <color attach="background" args={['#050505']} />
-          <Suspense fallback={null}>
-            <FluidGlassLens />
-          </Suspense>
-        </Canvas>
+        <FloatingLines 
+          enabledWaves={['top', 'middle', 'bottom']}
+          lineCount={[9, 15, 9]}
+          lineDistance={[8, 5, 8]}
+          bendRadius={5.0}
+          bendStrength={-0.5}
+          interactive={true}
+          parallax={true}
+          linesGradient={['#a855f7', '#22d3ee', '#ec4899']}
+          mouseDamping={0.01}
+        />
+        <div className="absolute inset-0 bg-black/40 pointer-events-none" />
       </div>
 
-      <div className="absolute inset-0 z-10 overflow-y-auto pointer-events-none">
+      <div className="absolute inset-0 z-10 overflow-y-auto pointer-events-auto">
         <div className="min-h-screen flex items-center justify-center p-6 md:p-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl w-full pointer-events-auto pt-[400px] md:pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl w-full pt-[100px] pb-20">
             {skills.map((category, idx) => (
-              <div key={idx} className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl hover:border-cyan-500/50 transition-colors duration-300">
+              <div key={idx} className="cursor-target group bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl hover:border-cyan-500/50 hover:scale-[1.02] hover:shadow-2xl hover:shadow-cyan-500/10 transition-all duration-300">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-400">
+                  <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-400 group-hover:text-white group-hover:bg-cyan-500 transition-colors">
                     <category.icon size={24} />
                   </div>
                   <h3 className="text-2xl font-bold text-white">{category.name}</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {category.items.map((item, i) => (
-                    <span key={i} className="px-4 py-2 bg-white/5 rounded-full text-sm text-gray-300 border border-white/5 hover:bg-white/10 hover:text-white transition-colors">
+                    <span key={i} className="px-4 py-2 bg-white/5 rounded-full text-sm text-gray-300 border border-white/5 group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white transition-all">
                       {item}
                     </span>
                   ))}
@@ -195,12 +103,11 @@ const SkillsPage = ({ goBack }) => {
   );
 };
 
-// --- NEW COMPONENT: Interactive Hover Card for About Section ---
-const HoverCard = ({ title, desc, icon: Icon, color }) => (
+// --- HOVER CARD ---
+const HoverCard = ({ title, desc, icon: Icon, color }: any) => (
   <div 
-    className={`group relative p-8 rounded-3xl bg-black/40 border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-2 backdrop-blur-md`}
+    className={`cursor-target group relative p-8 rounded-3xl bg-black/40 border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-2 backdrop-blur-md`}
   >
-    {/* Gradient Background Effect */}
     <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${color}`} />
     
     <div className="relative z-10">
@@ -215,36 +122,38 @@ const HoverCard = ({ title, desc, icon: Icon, color }) => (
   </div>
 );
 
-// --- LANDING PAGE ---
-const LandingPage = ({ onNavigate }) => {
-  return (
-    <>
-      {/* GLOBAL SCROLLING BACKGROUND (Visible across all sections) */}
-      <ScrollingBackground />
+// --- REUSABLE HOME SECTION CONTENT ---
+const HomeSection = ({ id, onNavigate }: { id: string, onNavigate: (id: string) => void }) => {
+  // Animation state
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-      {/* HOME SECTION */}
-      <section id="home" className="relative min-h-screen flex items-center pt-20">
+  return (
+    <section id={id} className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      <div className="w-full px-6 md:px-20 relative z-10 text-left pointer-events-none">
         
-        {/* Content Overlay - LEFT ALIGNED */}
-        <div className="w-full px-6 md:px-20 relative z-10 text-left pointer-events-none">
+        <div className={`transition-all duration-1000 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className="inline-block mb-4 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-black/20 backdrop-blur-sm text-cyan-400 text-sm font-medium tracking-wide">
+            AVAILABLE FOR HIRE
+          </div>
           
-          {/* Main Title - Large and Bold */}
-          <h1 className="text-6xl md:text-9xl font-black tracking-tighter text-white mb-6 drop-shadow-2xl font-sans leading-none">
+          <h1 className="text-6xl md:text-9xl font-black tracking-tighter text-white mb-6 drop-shadow-2xl font-sans leading-none break-words">
             DEV SHISHIR
           </h1>
 
-          {/* Subtitle - Monospace and Smaller */}
           <p className="max-w-2xl text-sm md:text-base text-gray-300 mb-10 leading-relaxed font-mono tracking-wide bg-black/40 backdrop-blur-md p-4 rounded-lg border-l-4 border-cyan-500">
             AI/ML Developer | Experienced in PyTorch, NLP, and Full-Stack Application Deployment.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-start gap-4 pointer-events-auto">
-            {/* Resume Button */}
             <a 
               href="/resume.pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-cyan-400 transition-colors duration-300 w-full sm:w-auto z-20 relative flex items-center justify-center gap-2"
+              className="cursor-target px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-cyan-400 transition-colors duration-300 w-full sm:w-auto z-20 relative flex items-center justify-center gap-2"
             >
               <FileText size={20} />
               Resume
@@ -252,17 +161,46 @@ const LandingPage = ({ onNavigate }) => {
 
             <button 
               onClick={() => onNavigate('contact')}
-              className="px-8 py-4 bg-transparent border border-white/20 text-white font-bold rounded-full hover:bg-white/10 backdrop-blur-sm transition-colors duration-300 w-full sm:w-auto z-20 relative"
+              className="cursor-target px-8 py-4 bg-transparent border border-white/20 text-white font-bold rounded-full hover:bg-white/10 backdrop-blur-sm transition-colors duration-300 w-full sm:w-auto z-20 relative"
             >
               Contact Me
             </button>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+};
 
-      {/* ABOUT SECTION - Transparent background to show image */}
+// --- LANDING PAGE ---
+const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
+  
+  // Infinite Scroll Logic
+  useEffect(() => {
+    const handleScroll = () => {
+      const homeEnd = document.getElementById('home-end');
+      if (!homeEnd) return;
+      
+      const rect = homeEnd.getBoundingClientRect();
+      if (rect.top <= 2 && rect.top >= -2) {
+         window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <>
+      {/* GLOBAL BACKGROUND (Vanta) */}
+      <VantaBackground />
+
+      {/* 1. REAL HOME SECTION */}
+      <HomeSection id="home" onNavigate={onNavigate} />
+
+      {/* 2. ABOUT SECTION */}
       <section id="about" className="relative min-h-screen flex items-center py-24">
-        
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <div className="mb-20">
             <h2 className="text-5xl md:text-7xl font-bold text-white mb-6">
@@ -286,13 +224,13 @@ const LandingPage = ({ onNavigate }) => {
             />
             <HoverCard 
               title="Full Stack Architecture"
-              desc="Designing scalable microservices and resilient APIs with Node.js, Next.js, and modern cloud infrastructure."
+              desc="Designing scalable microservices and resilient APIs with Node.js, Next.js (React), and Python."
               icon={Server}
               color="from-purple-500 to-pink-600"
             />
             <HoverCard 
               title="Interactive Experiences"
-              desc="Creating immersive 3D web applications with Three.js, React Three Fiber, and WebGL."
+              desc="Creating immersive 3D web applications using Framer Motion, Three.js, and WebGL."
               icon={Globe}
               color="from-amber-500 to-orange-600"
             />
@@ -318,20 +256,26 @@ const LandingPage = ({ onNavigate }) => {
         </div>
       </section>
       
-      {/* Selected Work */}
+      {/* 3. PROJECTS SECTION (Formerly Work) */}
       <section id="work" className="py-24 relative">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Selected Work</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Projects</h2>
+              <p className="text-gray-400 max-w-md">A selection of my recent technical work and experiments.</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[{ title: "Neon Finance", color: "from-blue-500 to-cyan-500" }, { title: "Aura Spaces", color: "from-purple-500 to-pink-500" }, { title: "Nexus API", color: "from-emerald-500 to-teal-500" }].map((project, i) => (
-              <div key={i} className="group relative rounded-2xl overflow-hidden aspect-[4/3] cursor-pointer border border-white/10 hover:border-white/30 transition-all">
+            {[
+              { title: "Avian Weather Net", desc: "Predicting weather using Birds sound", color: "from-blue-500 to-cyan-500" }, 
+              { title: "Plant Fertilizer & Disease Detection", desc: "AI-based agricultural assistance", color: "from-green-500 to-emerald-500" }, 
+              { title: "Portfolio", desc: "Immersive 3D Web Experience", color: "from-purple-500 to-pink-500" }
+            ].map((project, i) => (
+              <div key={i} className="cursor-target group relative rounded-2xl overflow-hidden aspect-[4/3] cursor-pointer border border-white/10 hover:border-white/30 transition-all">
                 <div className={`absolute inset-0 bg-gradient-to-br ${project.color} opacity-20 group-hover:opacity-30 transition-opacity`} />
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md m-[1px] rounded-2xl p-8 flex flex-col justify-end">
                   <h3 className="text-2xl font-bold text-white mb-2">{project.title}</h3>
+                  <p className="text-gray-400 text-sm">{project.desc}</p>
                 </div>
               </div>
             ))}
@@ -339,18 +283,56 @@ const LandingPage = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-24 relative">
-        <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8">Let's work together.</h2>
-          <a href="mailto:hello@example.com" className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-cyan-400 transition-colors duration-300 text-lg">
-            <Mail size={20} /> Get in Touch
-          </a>
+      {/* 4. CONTACT SECTION */}
+      <section id="contact" className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div>
+              <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight">
+                Let's <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Connect.</span>
+              </h2>
+              <p className="text-xl text-gray-300 leading-relaxed mb-12 bg-black/30 backdrop-blur-sm p-6 rounded-2xl border border-white/10">
+                I'm always open to discussing product design work, new opportunities, or partnerships. 
+                Whether you have a question or just want to say hi, I'll try my best to get back to you!
+              </p>
+            </div>
+
+            <div className="bg-black/40 backdrop-blur-xl p-10 rounded-3xl border border-white/10 hover:border-white/20 transition-all shadow-2xl shadow-cyan-500/5">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-4 bg-cyan-500/10 rounded-2xl text-cyan-400">
+                  <Mail size={32} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Email Me</h3>
+                  <a href="mailto:shishirkulal1234@gmail.com" className="cursor-target text-gray-300 hover:text-cyan-400 transition-colors break-all">
+                    shishirkulal1234@gmail.com
+                  </a>
+                </div>
+              </div>
+              <a href="mailto:shishirkulal1234@gmail.com" className="cursor-target flex items-center justify-center gap-3 w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-cyan-400 transition-colors duration-300 text-lg mb-8">
+                <Send size={20} /> Send Message
+              </a>
+              <div className="flex justify-center gap-6">
+                <a href="https://github.com/shishir-sh26" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-cyan-400 hover:scale-110 transition-all duration-300">
+                  <Github size={24} />
+                </a>
+                <a href="https://www.linkedin.com/in/shishir-r-kulal-4757a9296?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-cyan-400 hover:scale-110 transition-all duration-300">
+                  <Linkedin size={24} />
+                </a>
+                <a href="https://www.instagram.com/bwmmerc/" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-pink-500 hover:scale-110 transition-all duration-300">
+                  <Instagram size={24} />
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
-        <footer className="mt-24 border-t border-white/10 pt-12 pb-8 text-center text-gray-600 text-sm relative z-10">
+        <footer className="mt-32 border-t border-white/10 pt-12 pb-8 text-center text-gray-600 text-sm relative z-10">
           <p>&copy; {new Date().getFullYear()} Moncy-style Portfolio. Built with Next.js & Tailwind.</p>
         </footer>
       </section>
+
+      {/* 5. DUPLICATE HOME SECTION (For Infinite Loop) */}
+      <HomeSection id="home-end" onNavigate={onNavigate} />
     </>
   );
 };
@@ -382,9 +364,9 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navigateTo = (page, sectionId) => {
+  const navigateTo = (page: string, sectionId?: string) => {
     setCurrentPage(page);
-    setActiveSection(sectionId);
+    if (sectionId) setActiveSection(sectionId);
     if (page === 'landing' && sectionId) {
       setTimeout(() => {
         const element = document.getElementById(sectionId);
@@ -395,10 +377,10 @@ const App = () => {
     }
   };
 
-  const NavLink = ({ label, targetId, onClick }) => (
+  const NavLink = ({ label, targetId, onClick }: any) => (
     <button
       onClick={onClick}
-      className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full ${
+      className={`cursor-target relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full ${
         activeSection === targetId 
           ? 'text-black bg-white shadow-[0_0_20px_rgba(255,255,255,0.3)]' 
           : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -411,7 +393,21 @@ const App = () => {
   return (
     <div className="relative min-h-screen text-gray-200 font-sans selection:bg-cyan-500/30">
       
-      {/* Navigation */}
+      {/* Custom Target Cursor */}
+      <TargetCursor 
+        targetSelector=".cursor-target" 
+        spinDuration={4} 
+        hideDefaultCursor={true} 
+        parallaxOn={true} 
+      />
+
+      {/* PERSISTENT BACKGROUND (MOVED HERE FROM LANDING PAGE) */}
+      {/* This ensures Vanta doesn't unmount when switching pages */}
+      <div className={`fixed inset-0 z-[-1] transition-opacity duration-700 ${currentPage === 'landing' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+         <VantaBackground />
+      </div>
+
+      {/* Navigation - REORDERED: Home -> About -> Work -> Contact -> Skills */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? 'py-4' : 'py-6'
       }`}>
@@ -422,7 +418,7 @@ const App = () => {
         } transition-all duration-300 flex items-center justify-between`}>
           
           <button 
-            className="flex items-center gap-2 text-2xl font-bold tracking-tighter text-white hover:text-cyan-400 transition-colors z-50 cursor-pointer pointer-events-auto"
+            className="cursor-target flex items-center gap-2 text-2xl font-bold tracking-tighter text-white hover:text-cyan-400 transition-colors z-50 cursor-pointer pointer-events-auto"
             onClick={() => {
               setCurrentPage('playground');
               setActiveSection('playground');
@@ -435,11 +431,11 @@ const App = () => {
             <NavLink label="Home" targetId="home" onClick={() => navigateTo('landing', 'home')} />
             <NavLink label="About" targetId="about" onClick={() => navigateTo('landing', 'about')} />
             <NavLink label="Work" targetId="work" onClick={() => navigateTo('landing', 'work')} />
-            <NavLink label="Skills" targetId="skills" onClick={() => navigateTo('skills', 'skills')} />
             <NavLink label="Contact" targetId="contact" onClick={() => navigateTo('landing', 'contact')} />
+            <NavLink label="Skills" targetId="skills" onClick={() => navigateTo('skills', 'skills')} />
           </div>
 
-          <button className="md:hidden text-white p-2">
+          <button className="cursor-target md:hidden text-white p-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -456,7 +452,7 @@ const App = () => {
           <div className="fixed inset-0 z-[60] bg-[#050505]">
             <button 
               onClick={() => navigateTo('landing', 'home')}
-              className="absolute top-6 left-6 z-[70] flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 cursor-pointer"
+              className="cursor-target absolute top-6 left-6 z-[70] flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 cursor-pointer"
             >
               <ArrowLeft size={20} /> Back to Home
             </button>

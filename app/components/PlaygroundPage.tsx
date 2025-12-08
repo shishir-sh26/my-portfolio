@@ -1,194 +1,262 @@
 "use client";
 
-import React, { useRef, useState, useEffect, Suspense } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useEffect, useRef, useState } from 'react';
+import { Canvas, extend, useFrame } from '@react-three/fiber';
+import { useTexture, Environment, Lightformer, Text } from '@react-three/drei';
 import {
-  useScroll,
-  Image,
-  Scroll,
-  Preload,
-  ScrollControls,
-  MeshTransmissionMaterial,
-  Text
-} from '@react-three/drei';
+  BallCollider,
+  CuboidCollider,
+  Physics,
+  RigidBody,
+  useRopeJoint,
+  useSphericalJoint,
+  RigidBodyProps
+} from '@react-three/rapier';
+import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
 import * as THREE from 'three';
 
-// --- Utils ---
-const damp3 = (target, to, speed, delta) => {
-  if (!target || !to) return;
-  target.x += (to[0] - target.x) * speed * delta * 60;
-  target.y += (to[1] - target.y) * speed * delta * 60;
-  target.z += (to[2] - target.z) * speed * delta * 60;
-};
+// Extend Three.js with MeshLine
+extend({ MeshLineGeometry, MeshLineMaterial });
 
-// --- Components ---
+// --- LANYARD COMPONENT ---
+interface BandProps {
+  maxSpeed?: number;
+  minSpeed?: number;
+  isMobile?: boolean;
+}
 
-function GlassObject({ 
-  children, 
-  followPointer = true, 
-  modeProps = {}, 
-  ...props 
-}) {
-  const ref = useRef();
-  const { viewport } = useThree();
+function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
+  // Refs for physics bodies
+  const band = useRef<any>(null);
+  const fixed = useRef<any>(null);
+  const j1 = useRef<any>(null);
+  const j2 = useRef<any>(null);
+  const j3 = useRef<any>(null);
+  const card = useRef<any>(null);
+
+  const vec = new THREE.Vector3();
+  const ang = new THREE.Vector3();
+  const rot = new THREE.Vector3();
+  const dir = new THREE.Vector3();
+
+  const segmentProps: any = {
+    type: 'dynamic' as RigidBodyProps['type'],
+    canSleep: true,
+    colliders: false,
+    angularDamping: 4,
+    linearDamping: 4
+  };
+
+  // Curve for the strap
+  const [curve] = useState(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(), 
+        new THREE.Vector3(), 
+        new THREE.Vector3(), 
+        new THREE.Vector3()
+      ])
+  );
+  
+  const [dragged, drag] = useState<false | THREE.Vector3>(false);
+  const [hovered, hover] = useState(false);
+
+  // Connect physics joints
+  useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
+  useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
+  useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
+  useSphericalJoint(j3, card, [
+    [0, 0, 0],
+    [0, 1.45, 0]
+  ]);
+
+  useEffect(() => {
+    if (hovered) {
+      document.body.style.cursor = dragged ? 'grabbing' : 'grab';
+      return () => {
+        document.body.style.cursor = 'auto';
+      };
+    }
+  }, [hovered, dragged]);
 
   useFrame((state, delta) => {
-    const { pointer, camera } = state;
-    const v = viewport.getCurrentViewport(camera, [0, 0, 15]);
-
-    const destX = followPointer ? (pointer.x * v.width) / 2 : 0;
-    const destY = followPointer ? (pointer.y * v.height) / 2 : 0;
+    if (dragged && typeof dragged !== 'boolean') {
+      vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
+      dir.copy(vec).sub(state.camera.position).normalize();
+      vec.add(dir.multiplyScalar(state.camera.position.length()));
+      [card, j1, j2, j3, fixed].forEach(ref => ref.current?.wakeUp());
+      card.current?.setNextKinematicTranslation({
+        x: vec.x - dragged.x,
+        y: vec.y - dragged.y,
+        z: vec.z - dragged.z
+      });
+    }
     
-    if (ref.current) {
-        damp3(ref.current.position, [destX, destY, 15], 0.15, delta);
-        // Add subtle rotation
-        ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, destY * 0.05 + Math.PI/2, 0.1);
-        ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, destX * 0.05, 0.1);
+    if (fixed.current) {
+      // Fix the top point
+      [j1, j2].forEach(ref => {
+        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
+        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
+        ref.current.lerped.lerp(
+          ref.current.translation(),
+          delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
+        );
+      });
+      
+      // Update curve points based on physics bodies
+      curve.points[0].copy(j3.current.translation());
+      curve.points[1].copy(j2.current.lerped);
+      curve.points[2].copy(j1.current.lerped);
+      curve.points[3].copy(fixed.current.translation());
+      
+      // Update mesh geometry
+      band.current.geometry.setPoints(curve.getPoints(isMobile ? 16 : 32));
+      
+      // Dampen card rotation
+      ang.copy(card.current.angvel());
+      rot.copy(card.current.rotation());
+      card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
     }
   });
 
-  const { ior, thickness, anisotropy, chromaticAberration, ...extraMat } = modeProps;
+  curve.curveType = 'chordal';
+  // texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
   return (
-    <mesh ref={ref} rotation-x={Math.PI / 2} {...props}>
-      {children}
-      <MeshTransmissionMaterial
-        transmission={1}
-        thickness={thickness ?? 3.5}
-        roughness={0}
-        ior={ior ?? 1.2}
-        chromaticAberration={chromaticAberration ?? 0.06}
-        anisotropy={anisotropy ?? 0.1}
-        distortion={0.5}
-        distortionScale={0.3}
-        temporalDistortion={0.5}
-        clearcoat={1}
-        color="#ffffff"
-        {...extraMat}
-      />
-    </mesh>
-  );
-}
+    <>
+      <group position={[0, 4, 0]}>
+        {/* Anchor Point */}
+        <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
+        
+        {/* Chain Links */}
+        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
 
-function NavItems({ items }) {
-  const group = useRef();
-  const { viewport } = useThree();
-
-  // Responsive settings
-  const width = viewport.width;
-  const isMobile = width < 5;
-  
-  const spacing = isMobile ? 0.8 : 1.5;
-  const fontSize = isMobile ? 0.3 : 0.5;
-
-  useFrame(() => {
-    if (!group.current) return;
-    // Keep nav centered
-    group.current.position.set(0, 0, 12);
-  });
-
-  return (
-    <group ref={group} renderOrder={10}>
-      {items.map(({ label }, i) => (
-        <Text
-          key={label}
-          position={[(i - (items.length - 1) / 2) * spacing * 3, 0, 0]}
-          fontSize={fontSize}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.02}
-          outlineColor="#000"
+        {/* The Card */}
+        <RigidBody
+          position={[2, 0, 0]}
+          ref={card}
+          {...segmentProps}
+          type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
         >
-          {label}
-        </Text>
-      ))}
-    </group>
+          <CuboidCollider args={[0.8, 1.125, 0.01]} />
+          <group
+            scale={2.25}
+            position={[0, -1.2, -0.05]}
+            onPointerOver={() => hover(true)}
+            onPointerOut={() => hover(false)}
+            onPointerUp={(e: any) => {
+              e.target.releasePointerCapture(e.pointerId);
+              drag(false);
+            }}
+            onPointerDown={(e: any) => {
+              e.target.setPointerCapture(e.pointerId);
+              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+            }}
+          >
+            {/* Card Geometry - Using a simple Box since we don't have the GLB loaded */}
+            <mesh>
+              <boxGeometry args={[0.8, 1.125, 0.05]} />
+              <meshPhysicalMaterial
+                color="#ffffff"
+                clearcoat={1}
+                clearcoatRoughness={0.15}
+                roughness={0.3}
+                metalness={0.5}
+              />
+            </mesh>
+            
+            {/* Add Text to Card */}
+            <group position={[0, 0, 0.03]}>
+              <Text
+                position={[0, 0.2, 0]}
+                fontSize={0.15}
+                color="#000000"
+                anchorX="center"
+                anchorY="middle"
+              >
+                DEV SHISHIR
+              </Text>
+              <Text
+                position={[0, -0.1, 0]}
+                fontSize={0.1}
+                color="#555555"
+                anchorX="center"
+                anchorY="middle"
+              >
+                Developer
+              </Text>
+            </group>
+
+            {/* Clip geometry (simplified) */}
+            <mesh position={[0, 0.6, 0]}>
+                <boxGeometry args={[0.3, 0.1, 0.1]} />
+                <meshStandardMaterial color="#888" />
+            </mesh>
+
+          </group>
+        </RigidBody>
+      </group>
+      
+      {/* The Strap Line */}
+      <mesh ref={band}>
+        <meshLineGeometry />
+        <meshLineMaterial
+          color="white"
+          depthTest={false}
+          resolution={[1000, 1000]}
+          lineWidth={1}
+          // useMap={false} 
+        />
+      </mesh>
+    </>
   );
 }
 
-function Images() {
-  const group = useRef();
-  const data = useScroll();
-  const { height } = useThree((s) => s.viewport);
-
-  useFrame(() => {
-    if(!group.current || !data) return;
-    // Animate zoom based on scroll position
-    const zoom1 = 1 + data.range(0, 1 / 3) / 3;
-    const zoom2 = 1 + data.range(1.15 / 3, 1 / 3) / 2;
-    
-    // Safely apply zoom to children if they exist
-    group.current.children.forEach((child, index) => {
-        if (child.material) {
-            child.material.zoom = index < 2 ? zoom1 : zoom2;
-        }
-    });
-  });
-
-  return (
-    <group ref={group}>
-      <Image position={[-2, 0, 0]} scale={[3, height / 1.1]} url="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" />
-      <Image position={[2, 0, 3]} scale={3} url="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=800&q=80" />
-      <Image position={[-2.05, -height, 6]} scale={[1, 3]} url="https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80" />
-      <Image position={[-0.6, -height, 9]} scale={[1, 2]} url="https://images.unsplash.com/photo-1557672172-298e090bd0f1?auto=format&fit=crop&w=800&q=80" />
-      <Image position={[0.75, -height, 10.5]} scale={1.5} url="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80" />
-    </group>
-  );
-}
-
-function Typography() {
-  const { viewport } = useThree();
-  const fontSize = viewport.width < 5 ? 0.8 : 1.5;
-
-  return (
-    <Text
-      position={[0, 0, 10]}
-      fontSize={fontSize}
-      letterSpacing={-0.05}
-      color="white"
-      anchorX="center"
-      anchorY="middle"
-    >
-      React Bits
-    </Text>
-  );
-}
-
-// --- Main Component ---
+// --- MAIN PAGE COMPONENT ---
 
 export default function PlaygroundPage() {
-  const navItems = [
-    { label: 'Home' },
-    { label: 'About' },
-    { label: 'Contact' }
-  ];
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
-    <div className="w-full h-screen bg-[#050505] overflow-hidden">
-        <Canvas camera={{ position: [0, 0, 20], fov: 15 }} gl={{ alpha: true }}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} />
-          
-          <Suspense fallback={null}>
-            <ScrollControls damping={0.2} pages={3} distance={0.4}>
-                <NavItems items={navItems} />
-                
-                {/* Scrollable Background Content */}
-                <Scroll>
-                    <Typography />
-                    <Images />
-                </Scroll>
-
-                {/* Foreground Glass Lens */}
-                <GlassObject>
-                    <cylinderGeometry args={[5, 5, 0.5, 64]} />
-                </GlassObject>
-                
-                <Preload />
-            </ScrollControls>
-          </Suspense>
-        </Canvas>
+    <div className="relative z-0 w-full h-screen flex justify-center items-center bg-[#050505] overflow-hidden">
+      <Canvas
+        camera={{ position: [0, 0, 20], fov: 20 }}
+        dpr={[1, 2]}
+        gl={{ alpha: true }}
+      >
+        <ambientLight intensity={Math.PI} />
+        
+        <Physics gravity={[0, -40, 0]} timeStep={1 / 60}>
+          <Band isMobile={isMobile} />
+        </Physics>
+        
+        <Environment blur={0.75}>
+          <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
+        </Environment>
+      </Canvas>
+      
+      {/* Overlay Text */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 text-sm pointer-events-none">
+        Drag the card to interact
+      </div>
     </div>
   );
 }

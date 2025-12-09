@@ -33,7 +33,8 @@ const VantaBackground = dynamic(() => import('./components/VantaBackground'), {
 
 // --- 1. SHARED COMPONENTS & UTILS ---
 
-const damp3 = (target, to, speed, delta) => {
+// FIX APPLIED HERE: Added explicit types to resolve 'implicitly has an any type' error
+const damp3 = (target: THREE.Vector3, to: [number, number, number], speed: number, delta: number) => {
   if (!target || !to) return;
   target.x += (to[0] - target.x) * speed * delta * 60;
   target.y += (to[1] - target.y) * speed * delta * 60;
@@ -183,7 +184,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
       
       const rect = homeEnd.getBoundingClientRect();
       if (rect.top <= 2 && rect.top >= -2) {
-         window.scrollTo({ top: 0, behavior: 'auto' });
+          window.scrollTo({ top: 0, behavior: 'auto' });
       }
     };
 
@@ -404,7 +405,7 @@ const App = () => {
       {/* PERSISTENT BACKGROUND (MOVED HERE FROM LANDING PAGE) */}
       {/* This ensures Vanta doesn't unmount when switching pages */}
       <div className={`fixed inset-0 z-[-1] transition-opacity duration-700 ${currentPage === 'landing' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-         <VantaBackground />
+          <VantaBackground />
       </div>
 
       {/* Navigation - REORDERED: Home -> About -> Work -> Contact -> Skills */}

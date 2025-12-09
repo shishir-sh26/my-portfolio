@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, extend, useFrame } from '@react-three/fiber';
-import { useTexture, Environment, Lightformer, Text } from '@react-three/drei';
+import { Environment, Lightformer, Text } from '@react-three/drei';
 import {
   BallCollider,
   CuboidCollider,
@@ -207,8 +207,10 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
       
       {/* The Strap Line */}
       <mesh ref={band}>
-        <meshLineGeometry />
+        {/* FIX APPLIED HERE: Changed to lowercase and added attach prop */}
+        <meshLineGeometry attach="geometry" />
         <meshLineMaterial
+          attach="material" // <-- FIX APPLIED HERE: Added the missing attach prop
           color="white"
           depthTest={false}
           resolution={[1000, 1000]}

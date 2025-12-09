@@ -371,10 +371,11 @@ export default function FloatingLines({
     };
 
     const handleWindowMouseLeave = (event: MouseEvent) => {
-       // Only deactivate if we actually leave the document
-       if (!event.relatedTarget && !event.toElement) {
-         targetInfluenceRef.current = 0.0;
-       }
+        // Only deactivate if we actually leave the document
+        // FIX APPLIED HERE: Removed non-standard '&& !event.toElement' check
+        if (!event.relatedTarget) { 
+          targetInfluenceRef.current = 0.0;
+        }
     };
 
     if (interactive) {

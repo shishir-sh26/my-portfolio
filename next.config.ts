@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // 1. Crucial for GitHub Pages: Tells Next.js to generate static HTML files
+  // These files will be placed in a folder named 'out'.
   output: 'export', 
   
   // 2. Base path must match your GitHub repository name
@@ -9,7 +10,7 @@ const nextConfig: NextConfig = {
   basePath: '/my-portfolio', 
   
   // 3. Recommended for static export: Prevents build errors related to
-  // the Next.js image optimization server, which GitHub Pages cannot run.
+  // Next.js image optimization features, which GitHub Pages cannot run.
   images: {
     unoptimized: true, 
   },

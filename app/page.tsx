@@ -14,6 +14,8 @@ import dynamic from 'next/dynamic';
 // --- IMPORTS ---
 import PlaygroundPage from './components/PlaygroundPage';
 import TargetCursor from './components/TargetCursor';
+// NEW IMPORT: Import the LoadingScreen component
+import LoadingScreen from './components/LoadingScreen'; 
 
 // Dynamic imports for 3D backgrounds to avoid SSR issues
 const GridScan = dynamic(() => import('./components/GridScan'), { 
@@ -38,8 +40,12 @@ const damp3 = (target: THREE.Vector3, to: [number, number, number], speed: numbe
     if (!target || !to) return;
     target.x += (to[0] - target.x) * speed * delta * 60;
     target.y += (to[1] - target.y) * speed * delta * 60;
-    target.z += (to[2] - target.z) * speed * delta * 60;
+    target.z += (to[2] - to[2]) * speed * delta * 60;
 };
+
+// (All other Page Components: SkillsPage, HoverCard, HomeSection, ProjectCard remain unchanged)
+// ... (Your components SkillsPage, HoverCard, HomeSection, ProjectCard remain here) ...
+
 
 // --- 3. PAGE COMPONENTS ---
 
@@ -173,9 +179,114 @@ const HomeSection = ({ id, onNavigate }: { id: string, onNavigate: (id: string) 
     );
 };
 
+// --- ProjectCard Component (NEW) ---
+const ProjectCard = ({ project }: { project: any }) => {
+    return (
+        <div className="cursor-target group relative rounded-2xl overflow-hidden aspect-[4/3] border border-white/10 hover:border-white/30 transition-all">
+            {project.videoUrl ? (
+                // Use a video element for the 'Avian Weather Net' project
+                <video 
+                    className="absolute inset-0 w-full h-full object-cover" 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline
+                    src={project.videoUrl}
+                >
+                    Your browser does not support the video tag.
+                </video>
+            ) : (
+                // Fallback for other projects, using a gradient background
+                <div className={`absolute inset-0 bg-gradient-to-br ${project.color} opacity-20 group-hover:opacity-30 transition-opacity`} />
+            )}
+            
+            <div className="absolute inset-0 bg-black/60 m-[1px] rounded-2xl p-8 flex flex-col justify-end">
+                <h3 className="text-2xl font-bold text-white mb-2">{project.title}</h3>
+                <p className="text-gray-400 text-sm mb-4">{project.desc}</p>
+                
+                <div className="flex gap-3 mt-auto pointer-events-auto">
+                    {project.codeUrl && (
+                        <a 
+                            href={project.codeUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="cursor-target flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+                        >
+                            <Github size={16} /> Code
+                        </a>
+                    )}
+                    {project.liveUrl && (
+                        <a 
+                            href={project.liveUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="cursor-target flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-cyan-500/20 rounded-full hover:bg-cyan-500/40 transition-colors"
+                        >
+                            <ExternalLink size={16} /> Visit
+                        </a>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // --- LANDING PAGE ---
 const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
     
+    // Updated Projects Data
+    const projects = [
+        { 
+            title: "Avian Weather Net", 
+            desc: "Predicting weather using Birds sound through a Deep Learning model and a full-stack application.", 
+            color: "from-blue-500 to-cyan-500",
+            videoUrl: "/AvainWeatherNet.mp4", // Assumed public path
+            codeUrl: "https://github.com/shishir-sh26/AvainWeatherNet", // Placeholder
+            liveUrl: "#" // Placeholder
+        }, 
+        { 
+            title: "Plant Fertilizer & Disease Detection", 
+            desc: "AI-based agricultural assistance using computer vision to diagnose plant diseases and recommend fertilizers.", 
+            color: "from-green-500 to-emerald-500",
+            videoUrl: "/agrisense.mp4",
+            codeUrl: "https://github.com/shishir-sh26/agrisense", // Placeholder
+            liveUrl: "#" // Placeholder
+        }, 
+        { 
+            title: "3D Portfolio", 
+            desc: "An immersive, responsive 3D web experience built with Next.js, Three.js, and React-Three-Fiber.", 
+            color: "from-purple-500 to-pink-500",
+            videoUrl: "/D_Portfolio_Video_Generation.mp4",
+            codeUrl: "https://github.com/shishir-sh26/my-portfolio", // Placeholder
+            liveUrl: "https://dev-shishir.com" // Placeholder
+        }, 
+        { 
+            title: "GenAI projects", 
+            desc: "Collection of GenAI Projects.", 
+            color: "from-red-500 to-pink-500",
+            videoUrl: "GenAI_Project_Video_Generation.mp4",
+            codeUrl: "https://github.com/shishir-sh26/GenAi", // Placeholder
+            liveUrl: "#" // Placeholder
+        }, 
+        { 
+            title: "Expense Tracker", 
+            desc: "Project built to track your daily expenses using React and Node.js.", 
+            color: "from-green-500 to-blue-500",
+            videoUrl: "Expense_Tracker_Video_Generation.mp4",
+            codeUrl: "https://github.com/shishir-sh26/expense-tracker", // Placeholder
+            liveUrl: "#" // Placeholder
+        }, 
+        { 
+            title: "Blood Donation App", 
+            desc: "application to store the blood type and serch for an donar nearby.", 
+            color: "from-orange-500 to-yellow-500",
+            ImageUrl: "Blood_Donation_App_Video_Generation.mp4",
+            codeUrl: "https://github.com/shishir-sh26/-blooddonar", // Placeholder
+            liveUrl: "#" // Placeholder
+        }
+    
+    ];
+
     // Infinite Scroll Logic
     useEffect(() => {
         const handleScroll = () => {
@@ -194,9 +305,6 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
 
     return (
         <>
-            {/* GLOBAL BACKGROUND (Vanta) - Moved to App component */}
-            {/* <VantaBackground /> */} 
-
             {/* 1. REAL HOME SECTION */}
             <HomeSection id="home" onNavigate={onNavigate} />
 
@@ -257,7 +365,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
                 </div>
             </section>
             
-            {/* 3. PROJECTS SECTION (Formerly Work) */}
+            {/* 3. PROJECTS SECTION (Formerly Work) - MODIFIED */}
             <section id="work" className="py-24 relative">
                 <div className="max-w-7xl mx-auto px-6 relative z-10">
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
@@ -267,18 +375,9 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[
-                            { title: "Avian Weather Net", desc: "Predicting weather using Birds sound", color: "from-blue-500 to-cyan-500" }, 
-                            { title: "Plant Fertilizer & Disease Detection", desc: "AI-based agricultural assistance", color: "from-green-500 to-emerald-500" }, 
-                            { title: "Portfolio", desc: "Immersive 3D Web Experience", color: "from-purple-500 to-pink-500" }
-                        ].map((project, i) => (
-                            <div key={i} className="cursor-target group relative rounded-2xl overflow-hidden aspect-[4/3] cursor-pointer border border-white/10 hover:border-white/30 transition-all">
-                                <div className={`absolute inset-0 bg-gradient-to-br ${project.color} opacity-20 group-hover:opacity-30 transition-opacity`} />
-                                <div className="absolute inset-0 bg-black/60 backdrop-blur-md m-[1px] rounded-2xl p-8 flex flex-col justify-end">
-                                    <h3 className="text-2xl font-bold text-white mb-2">{project.title}</h3>
-                                    <p className="text-gray-400 text-sm">{project.desc}</p>
-                                </div>
-                            </div>
+                        {/* ITERATE OVER THE NEW PROJECTS ARRAY AND USE THE NEW CARD COMPONENT */}
+                        {projects.map((project, i) => (
+                            <ProjectCard key={i} project={project} />
                         ))}
                     </div>
                 </div>
@@ -338,12 +437,23 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
     );
 };
 
-// --- 4. MAIN APP ---
+// --- 4. MAIN APP (Wrapper to handle Loading State) ---
 
 const App = () => {
     const [currentPage, setCurrentPage] = useState('landing');
     const [activeSection, setActiveSection] = useState('home');
     const [scrolled, setScrolled] = useState(false);
+    // NEW STATE: Loading state
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        // Handle loading screen: Show for a minimum of 3 seconds
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 3000); // 3-second delay for a good user experience
+
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -353,7 +463,8 @@ const App = () => {
                 const el = document.getElementById(section);
                 if (el) {
                     const rect = el.getBoundingClientRect();
-                    if (rect.top <= 150 && rect.bottom >= 150) {
+                    // Adjusted boundary check for better active section detection
+                    if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
                         setActiveSection(section);
                         break;
                     }
@@ -361,9 +472,19 @@ const App = () => {
             }
         };
         
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+        // Only attach scroll listener after loading is complete
+        if (!isLoading) {
+             window.addEventListener('scroll', handleScroll);
+             // Initial check
+             handleScroll(); 
+        }
+
+        return () => {
+            if (!isLoading) {
+                 window.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [isLoading]); // Rerun effect when loading status changes
 
     const navigateTo = (page: string, sectionId?: string) => {
         setCurrentPage(page);
@@ -390,6 +511,11 @@ const App = () => {
             {label}
         </button>
     );
+    
+    // CONDITIONAL RENDERING: Render LoadingScreen if loading is true
+    if (isLoading) {
+        return <LoadingScreen />;
+    }
 
     return (
         <div className="relative min-h-screen text-gray-200 font-sans selection:bg-cyan-500/30">

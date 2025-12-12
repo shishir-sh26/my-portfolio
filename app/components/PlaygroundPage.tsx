@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas, extend, useFrame } from '@react-three/fiber';
 import { Environment, Lightformer, Text } from '@react-three/drei';
 import {
@@ -18,7 +18,15 @@ import * as THREE from 'three';
 // Extend Three.js with MeshLine
 extend({ MeshLineGeometry, MeshLineMaterial });
 
-// --- LANYARD COMPONENT ---
+// CRITICAL TYPE FIX: Augment the @react-three/fiber namespace
+declare module '@react-three/fiber' {
+  interface IntrinsicElements {
+    meshLineGeometry: any;
+    meshLineMaterial: any;
+  }
+}
+
+// --- LANYARD COMPONENT (The 3D Card) ---
 interface BandProps {
   maxSpeed?: number;
   minSpeed?: number;
@@ -26,7 +34,7 @@ interface BandProps {
 }
 
 function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
-  // Refs for physics bodies
+  // Refs for physics bodies and the mesh line
   const band = useRef<any>(null);
   const fixed = useRef<any>(null);
   const j1 = useRef<any>(null);
@@ -47,7 +55,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
     linearDamping: 4
   };
 
-  // Curve for the strap
   const [curve] = useState(
     () =>
       new THREE.CatmullRomCurve3([
@@ -61,7 +68,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
   const [dragged, drag] = useState<false | THREE.Vector3>(false);
   const [hovered, hover] = useState(false);
 
-  // Connect physics joints
   useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
@@ -93,7 +99,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
     }
     
     if (fixed.current) {
-      // Fix the top point
       [j1, j2].forEach(ref => {
         if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
         const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
@@ -103,16 +108,13 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
         );
       });
       
-      // Update curve points based on physics bodies
       curve.points[0].copy(j3.current.translation());
       curve.points[1].copy(j2.current.lerped);
       curve.points[2].copy(j1.current.lerped);
       curve.points[3].copy(fixed.current.translation());
       
-      // Update mesh geometry
       band.current.geometry.setPoints(curve.getPoints(isMobile ? 16 : 32));
       
-      // Dampen card rotation
       ang.copy(card.current.angvel());
       rot.copy(card.current.rotation());
       card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
@@ -120,15 +122,12 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
   });
 
   curve.curveType = 'chordal';
-  // texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
   return (
     <>
       <group position={[0, 4, 0]}>
-        {/* Anchor Point */}
         <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
         
-        {/* Chain Links */}
         <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
@@ -139,7 +138,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
           <BallCollider args={[0.1]} />
         </RigidBody>
 
-        {/* The Card */}
+        {/* The Card - Dragging is now on Right Click */}
         <RigidBody
           position={[2, 0, 0]}
           ref={card}
@@ -157,11 +156,13 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
               drag(false);
             }}
             onPointerDown={(e: any) => {
-              e.target.setPointerCapture(e.pointerId);
-              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+              // 🔄 FIX 2: Trigger drag on Right Click (e.button === 2)
+              if (e.button === 2) { 
+                e.target.setPointerCapture(e.pointerId);
+                drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+              }
             }}
           >
-            {/* Card Geometry - Using a simple Box since we don't have the GLB loaded */}
             <mesh>
               <boxGeometry args={[0.8, 1.125, 0.05]} />
               <meshPhysicalMaterial
@@ -173,7 +174,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
               />
             </mesh>
             
-            {/* Add Text to Card */}
             <group position={[0, 0, 0.03]}>
               <Text
                 position={[0, 0.2, 0]}
@@ -195,70 +195,194 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
               </Text>
             </group>
 
-            {/* Clip geometry (simplified) */}
             <mesh position={[0, 0.6, 0]}>
                 <boxGeometry args={[0.3, 0.1, 0.1]} />
                 <meshStandardMaterial color="#888" />
             </mesh>
-
           </group>
         </RigidBody>
       </group>
       
-      {/* The Strap Line */}
       <mesh ref={band}>
-        {/* FIX APPLIED HERE: Changed to lowercase and added attach prop */}
         <meshLineGeometry attach="geometry" />
         <meshLineMaterial
-          attach="material" // <-- FIX APPLIED HERE: Added the missing attach prop
+          attach="material"
           color="white"
           depthTest={false}
           resolution={[1000, 1000]}
           lineWidth={1}
-          // useMap={false} 
         />
       </mesh>
     </>
   );
 }
 
+// --- SCRATCH-OFF WRAPPER COMPONENT ---
+interface ScratchOffProps {
+    imageUrl: string;
+}
+
+function ScratchOff({ imageUrl }: ScratchOffProps) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const lastPoint = useRef<{x: number, y: number} | null>(null);
+    const maskRef = useRef<HTMLDivElement>(null);
+
+    const draw = (x: number, y: number) => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (ctx && lastPoint.current) {
+            ctx.beginPath();
+            ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            // 🚨 FIX 1: Use WebkitMaskImage (PascalCase) for React styling
+            maskRef.current!.style.WebkitMaskImage = `url(${canvas.toDataURL()})`;
+            maskRef.current!.style.maskImage = `url(${canvas.toDataURL()})`;
+        }
+        lastPoint.current = { x, y };
+    };
+
+    const initializeCanvas = useCallback(() => {
+        const canvas = canvasRef.current;
+        const mask = maskRef.current;
+
+        if (canvas && mask) {
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            if (ctx) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.globalCompositeOperation = 'destination-out'; 
+                ctx.lineWidth = 40; 
+                ctx.lineCap = 'round';
+
+                // 🚨 FIX 1: Use WebkitMaskImage (PascalCase) for React styling
+                mask.style.WebkitMaskImage = `url(${canvas.toDataURL()})`;
+                mask.style.maskImage = `url(${canvas.toDataURL()})`;
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        initializeCanvas();
+        window.addEventListener('resize', initializeCanvas); 
+        return () => window.removeEventListener('resize', initializeCanvas);
+    }, [initializeCanvas]);
+
+    const getCursorPosition = (event: React.MouseEvent) => {
+        return {
+            x: event.clientX,
+            y: event.clientY,
+        };
+    };
+
+    const handleStart = (event: React.MouseEvent) => {
+        // 🔄 FIX 2: Start drawing on Left Click (event.button === 0)
+        if (event.button === 0) { 
+            event.preventDefault(); 
+            const pos = getCursorPosition(event);
+            lastPoint.current = pos;
+            setIsDrawing(true);
+        }
+    };
+
+    const handleMove = (event: React.MouseEvent) => {
+        if (!isDrawing) return;
+        event.preventDefault();
+        const pos = getCursorPosition(event);
+        draw(pos.x, pos.y);
+    };
+
+    const handleEnd = () => {
+        setIsDrawing(false);
+        lastPoint.current = null;
+    };
+
+
+    return (
+        <div 
+            className="w-full h-full relative"
+            style={{
+                backgroundImage: `url('${imageUrl}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+            }}
+            onMouseMove={handleMove}
+            onMouseUp={handleEnd}
+            onMouseLeave={handleEnd}
+            onMouseDown={handleStart}
+            // Prevents right-click menu, allowing the right-click drag to work
+            onContextMenu={(e) => e.preventDefault()} 
+        >
+            {/* 1. R3F Canvas (Interactive, z-20) */}
+            <div className="absolute top-0 left-0 w-full h-full z-20">
+                <Canvas
+                    camera={{ position: [0, 0, 20], fov: 20 }}
+                    dpr={[1, 2]}
+                    gl={{ alpha: true }}
+                >
+                    <ambientLight intensity={Math.PI} />
+                    
+                    <Physics gravity={[0, -40, 0]} timeStep={1 / 60}>
+                        <Band isMobile={false} />
+                    </Physics>
+                    
+                    <Environment blur={0.75}>
+                        <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+                        <Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+                        <Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+                        <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
+                    </Environment>
+                </Canvas>
+            </div>
+
+            {/* 2. Opaque Overlay Mask (The Scratchable Coating, z-10) */}
+            <div
+                ref={maskRef}
+                className="absolute top-0 left-0 w-full h-full z-10"
+                style={{
+                    backgroundColor: '#050505',
+                    // 🚨 FIX 1 Applied here: Use PascalCase for the vendor prefix in JSX
+                    WebkitMaskImage: 'initial', 
+                    maskImage: 'initial',
+                    maskComposite: 'exclude',
+                    pointerEvents: 'none', 
+                    transition: 'none'
+                }}
+            />
+
+            {/* 3. Hidden HTML Canvas (z-0, Used only for drawing the mask texture) */}
+            <canvas 
+                ref={canvasRef}
+                className="absolute top-0 left-0"
+                style={{
+                    visibility: 'hidden', 
+                    pointerEvents: 'none'
+                }}
+            />
+
+            {/* Overlay Text */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 text-sm pointer-events-none z-30">
+                **Left-Click and scribble** the background to reveal the image! **Right-Click and drag the card.**
+            </div>
+        </div>
+    );
+}
+
+
 // --- MAIN PAGE COMPONENT ---
+const BACKGROUND_IMAGE_URL = 'https://images.pexels.com/photos/531880/pexels-photo-531880.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
 
 export default function PlaygroundPage() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return (
-    <div className="relative z-0 w-full h-screen flex justify-center items-center bg-[#050505] overflow-hidden">
-      <Canvas
-        camera={{ position: [0, 0, 20], fov: 20 }}
-        dpr={[1, 2]}
-        gl={{ alpha: true }}
-      >
-        <ambientLight intensity={Math.PI} />
-        
-        <Physics gravity={[0, -40, 0]} timeStep={1 / 60}>
-          <Band isMobile={isMobile} />
-        </Physics>
-        
-        <Environment blur={0.75}>
-          <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-          <Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-          <Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-          <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
-        </Environment>
-      </Canvas>
-      
-      {/* Overlay Text */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 text-sm pointer-events-none">
-        Drag the card to interact
-      </div>
-    </div>
-  );
+    return (
+        <div className="relative z-0 w-full h-screen flex justify-center items-center overflow-hidden">
+            <ScratchOff imageUrl={BACKGROUND_IMAGE_URL} />
+        </div>
+    );
 }

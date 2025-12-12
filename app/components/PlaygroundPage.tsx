@@ -237,12 +237,37 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
             ctx.lineTo(x, y);
             ctx.stroke();
             
-            // 🚨 FIX 1: Use webkitMaskImage (camelCase) for direct DOM styling
+            // FIX: Use camelCase (webkitMaskImage) for direct DOM style assignment
             maskRef.current!.style.webkitMaskImage = `url(${canvas.toDataURL()})`;
             maskRef.current!.style.maskImage = `url(${canvas.toDataURL()})`;
         }
         lastPoint.current = { x, y };
     };
+
+    const initializeCanvas = useCallback(() => {
+        const canvas = canvasRef.current;
+        const mask = maskRef.current;
+
+        if (canvas && mask) {
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            if (ctx) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.globalCompositeOperation = 'destination-out'; 
+                ctx.lineWidth = 40; 
+                ctx.lineCap = 'round';
+
+                // FIX: Use camelCase (webkitMaskImage) for direct DOM style assignment
+                mask.style.webkitMaskImage = `url(${canvas.toDataURL()})`;
+                mask.style.maskImage = `url(${canvas.toDataURL()})`;
+            }
+        }
+    }, []);
 
     const initializeCanvas = useCallback(() => {
         const canvas = canvasRef.current;

@@ -244,7 +244,9 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
     const draw = (x: number, y: number) => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
-        if (ctx && lastPoint.current) {
+        
+        // ✅ FIX: Ensure canvas is non-null before calling canvas.toDataURL()
+        if (canvas && ctx && lastPoint.current) {
             ctx.beginPath();
             ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
             ctx.lineTo(x, y);

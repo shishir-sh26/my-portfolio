@@ -86,11 +86,14 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
     }, [hovered, dragged]);
 
     useFrame((state, delta) => {
+        // Dragging Logic
         if (dragged && typeof dragged !== 'boolean') {
             vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
             dir.copy(vec).sub(state.camera.position).normalize();
-            vec.add(dir.multiplyScalar(state.camera.position.length()));
+            vec.add(dir.multiplyScalar(state.camera.position.length() * 0.4)); 
+            
             [card, j1, j2, j3, fixed].forEach(ref => ref.current?.wakeUp());
+
             card.current?.setNextKinematicTranslation({
                 x: vec.x - dragged.x,
                 y: vec.y - dragged.y,
@@ -98,6 +101,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
             });
         }
         
+        // Rope and Lanyard Update Logic
         if (fixed.current) {
             [j1, j2].forEach(ref => {
                 if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
@@ -108,13 +112,16 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
                 );
             });
             
+            // Update the CatmullRomCurve points
             curve.points[0].copy(j3.current.translation());
             curve.points[1].copy(j2.current.lerped);
             curve.points[2].copy(j1.current.lerped);
             curve.points[3].copy(fixed.current.translation());
             
+            // Update the MeshLine geometry
             band.current.geometry.setPoints(curve.getPoints(isMobile ? 16 : 32));
             
+            // Damping/Swinging effect for the card
             ang.copy(card.current.angvel());
             rot.copy(card.current.rotation());
             card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
@@ -126,8 +133,10 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
     return (
         <>
             <group position={[0, 4, 0]}>
+                {/* Fixed Anchor Point (e.g., clipped to a shirt) */}
                 <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
                 
+                {/* Rope/Lanyard Segments connected by Rope Joints */}
                 <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
                     <BallCollider args={[0.1]} />
                 </RigidBody>
@@ -156,13 +165,14 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
                             drag(false);
                         }}
                         onPointerDown={(e: any) => {
-                            // 🔄 FIX 2: Trigger drag on Right Click (e.button === 2)
+                            // Trigger drag on Right Click (e.button === 2)
                             if (e.button === 2) { 
                                 e.target.setPointerCapture(e.pointerId);
                                 drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
                             }
                         }}
                     >
+                        {/* Card Mesh */}
                         <mesh>
                             <boxGeometry args={[0.8, 1.125, 0.05]} />
                             <meshPhysicalMaterial
@@ -174,6 +184,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
                             />
                         </mesh>
                         
+                        {/* Card Text Content */}
                         <group position={[0, 0, 0.03]}>
                             <Text
                                 position={[0, 0.2, 0]}
@@ -195,6 +206,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
                             </Text>
                         </group>
 
+                        {/* Card Connector Ring/Loop */}
                         <mesh position={[0, 0.6, 0]}>
                             <boxGeometry args={[0.3, 0.1, 0.1]} />
                             <meshStandardMaterial color="#888" />
@@ -203,14 +215,15 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
                 </RigidBody>
             </group>
             
+            {/* The Lanyard MeshLine */}
             <mesh ref={band}>
                 <meshLineGeometry attach="geometry" />
                 <meshLineMaterial
                     attach="material"
                     color="white"
                     depthTest={false}
-                    resolution={[1000, 1000]}
-                    lineWidth={1}
+                    resolution={[window.innerWidth, window.innerHeight]}
+                    lineWidth={2}
                 />
             </mesh>
         </>
@@ -237,7 +250,7 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
             ctx.lineTo(x, y);
             ctx.stroke();
             
-            // FIX: Use camelCase (webkitMaskImage) for direct DOM style assignment
+            // RAW DOM FIX: Use camelCase 'webkitMaskImage'
             maskRef.current!.style.webkitMaskImage = `url(${canvas.toDataURL()})`;
             maskRef.current!.style.maskImage = `url(${canvas.toDataURL()})`;
         }
@@ -262,32 +275,7 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
                 ctx.lineWidth = 40; 
                 ctx.lineCap = 'round';
 
-                // FIX: Use camelCase (webkitMaskImage) for direct DOM style assignment
-                mask.style.webkitMaskImage = `url(${canvas.toDataURL()})`;
-                mask.style.maskImage = `url(${canvas.toDataURL()})`;
-            }
-        }
-    }, []);
-
-    const initializeCanvas = useCallback(() => {
-        const canvas = canvasRef.current;
-        const mask = maskRef.current;
-
-        if (canvas && mask) {
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            
-            if (ctx) {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.globalCompositeOperation = 'destination-out'; 
-                ctx.lineWidth = 40; 
-                ctx.lineCap = 'round';
-
-                // 🚨 FIX 2: Use webkitMaskImage (camelCase) for direct DOM styling
+                // RAW DOM FIX: Use camelCase 'webkitMaskImage'
                 mask.style.webkitMaskImage = `url(${canvas.toDataURL()})`;
                 mask.style.maskImage = `url(${canvas.toDataURL()})`;
             }
@@ -308,12 +296,12 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
     };
 
     const handleStart = (event: React.MouseEvent) => {
-        // 🔄 FIX 3: Start drawing on Left Click (event.button === 0)
+        // Start drawing on Left Click (event.button === 0)
         if (event.button === 0) { 
             event.preventDefault(); 
             const pos = getCursorPosition(event);
             lastPoint.current = pos;
-            draw(pos.x, pos.y); // Draw immediately on click start
+            draw(pos.x, pos.y); 
             setIsDrawing(true);
         }
     };
@@ -343,7 +331,7 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
             onMouseUp={handleEnd}
             onMouseLeave={handleEnd}
             onMouseDown={handleStart}
-            // Prevents right-click menu, allowing the right-click drag to work
+            // Prevents right-click menu, allowing the right-click drag to work on the R3F canvas
             onContextMenu={(e) => e.preventDefault()} 
         >
             {/* 1. R3F Canvas (Interactive, z-20) */}
@@ -356,6 +344,8 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
                     <ambientLight intensity={Math.PI} />
                     
                     <Physics gravity={[0, -40, 0]} timeStep={1 / 60}>
+                        {/* Ground Collider for stability */}
+                        <CuboidCollider position={[0, -5, 0]} args={[100, 1, 100]} />
                         <Band isMobile={false} />
                     </Physics>
                     
@@ -374,12 +364,12 @@ function ScratchOff({ imageUrl }: ScratchOffProps) {
                 className="absolute top-0 left-0 w-full h-full z-10"
                 style={{
                     backgroundColor: '#050505',
-                    // Note: Here (in JSX style prop) PascalCase IS correct, 
-                    // but the assignments in the functions must be camelCase.
+                    // JSX FIX: Must use PascalCase 'WebkitMaskImage' in React style prop
                     WebkitMaskImage: 'initial', 
                     maskImage: 'initial',
                     maskComposite: 'exclude',
-                    pointerEvents: 'none', 
+                    // Must be 'auto' for the mouse event handlers on the parent div to register
+                    pointerEvents: 'auto', 
                     transition: 'none'
                 }}
             />

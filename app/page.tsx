@@ -250,7 +250,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             color: "from-green-500 to-emerald-500",
             videoUrl: "/agrisense.mp4",
             codeUrl: "https://github.com/shishir-sh26/agrisense", // Placeholder
-            liveUrl: "#" // Placeholder
+            liveUrl: "https://shrinidhianchan.github.io/ai-plant-based-agrisense/" // Placeholder
         }, 
         { 
             title: "3D Portfolio", 
@@ -280,7 +280,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             title: "Blood Donation App", 
             desc: "application to store the blood type and serch for an donar nearby.", 
             color: "from-orange-500 to-yellow-500",
-            ImageUrl: "Blood_Donation_App_Video_Generation.mp4",
+            ImageUrl: "Gemini_Generated_Image_1rs40x1rs40x1rs4.png",
             codeUrl: "https://github.com/shishir-sh26/-blooddonar", // Placeholder
             liveUrl: "#" // Placeholder
         }

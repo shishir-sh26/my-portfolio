@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, useRef, Suspense, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useThree, createPortal } from '@react-three/fiber';
 import { useFBO, Text, MeshTransmissionMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -184,7 +184,7 @@ const ProjectCard = ({ project }: { project: any }) => {
     return (
         <div className="cursor-target group relative rounded-2xl overflow-hidden aspect-[4/3] border border-white/10 hover:border-white/30 transition-all">
             {project.videoUrl ? (
-                // Use a video element for the 'Avian Weather Net' project
+                // Use a video element for the project
                 <video 
                     className="absolute inset-0 w-full h-full object-cover" 
                     autoPlay 
@@ -446,14 +446,22 @@ const App = () => {
     // NEW STATE: Loading state
     const [isLoading, setIsLoading] = useState(true);
 
+    // ✅ NEW: Define the function required by LoadingScreen
+    const handleLoaded = useCallback(() => {
+        setIsLoading(false);
+    }, []);
+
     useEffect(() => {
-        // Handle loading screen: Show for a minimum of 3 seconds
+        // Handle loading screen: Show for a minimum of 3 seconds (as a fallback)
         const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 3000); // 3-second delay for a good user experience
+            // Only force stop loading if it hasn't already been stopped by the LoadingScreen component
+            if (isLoading) {
+                setIsLoading(false);
+            }
+        }, 3500); // Slightly longer fallback time than the LoadingScreen's own timer
 
         return () => clearTimeout(timer);
-    }, []);
+    }, [isLoading]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -481,7 +489,7 @@ const App = () => {
 
         return () => {
             if (!isLoading) {
-                 window.removeEventListener('scroll', handleScroll);
+                window.removeEventListener('scroll', handleScroll);
             }
         };
     }, [isLoading]); // Rerun effect when loading status changes
@@ -514,7 +522,8 @@ const App = () => {
     
     // CONDITIONAL RENDERING: Render LoadingScreen if loading is true
     if (isLoading) {
-        return <LoadingScreen />;
+        // ✅ FIX: Pass the required 'onLoaded' prop
+        return <LoadingScreen onLoaded={handleLoaded} />;
     }
 
     return (
@@ -529,7 +538,6 @@ const App = () => {
             />
 
             {/* PERSISTENT BACKGROUND (MOVED HERE FROM LANDING PAGE) */}
-            {/* This ensures Vanta doesn't unmount when switching pages */}
             <div className={`fixed inset-0 z-[-1] transition-opacity duration-700 ${currentPage === 'landing' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <VantaBackground />
             </div>

@@ -10,6 +10,7 @@ import {
     Cpu, Globe, Zap, Send, Instagram, Wifi
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { Analytics } from "@vercel/analytics/next"
 
 // --- IMPORTS ---
 import PlaygroundPage from './components/PlaygroundPage';
@@ -280,7 +281,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             title: "Blood Donation App", 
             desc: "application to store the blood type and serch for an donar nearby.", 
             color: "from-orange-500 to-yellow-500",
-            ImageUrl: "Gemini_Generated_Image_1rs40x1rs40x1rs4.png",
+            videoUrl: "Blood_Donor_Search_Application.mp4",
             codeUrl: "https://github.com/shishir-sh26/-blooddonar", // Placeholder
             liveUrl: "#" // Placeholder
         }

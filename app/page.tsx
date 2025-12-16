@@ -1,3 +1,4 @@
+// app/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef, Suspense, useMemo, useCallback } from 'react';
@@ -7,7 +8,7 @@ import * as THREE from 'three';
 import { 
     Github, Twitter, Linkedin, Mail, ExternalLink, Code2, Palette, 
     Terminal, Database, LayoutTemplate, Server, Smartphone, Layers, ArrowLeft, FileText,
-    Cpu, Globe, Zap, Send, Instagram, Wifi
+    Cpu, Globe, Zap, Send, Instagram, Wifi, Menu, X // ADDED: Menu and X icons
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Analytics } from "@vercel/analytics/next"
@@ -15,10 +16,19 @@ import { Analytics } from "@vercel/analytics/next"
 // --- IMPORTS ---
 import PlaygroundPage from './components/PlaygroundPage';
 import TargetCursor from './components/TargetCursor';
-// NEW IMPORT: Import the LoadingScreen component
 import LoadingScreen from './components/LoadingScreen'; 
 
-// Dynamic imports for 3D backgrounds to avoid SSR issues
+// ✅ NEW: Dynamic Import for SkillsPage
+const LazySkillsPage = dynamic(() => import('./components/SkillsPage'), {
+    ssr: false,
+    loading: () => (
+        <div className="fixed inset-0 z-50 bg-[#050505] flex items-center justify-center text-white text-xl">
+            Loading Skills...
+        </div>
+    )
+});
+
+// Dynamic imports for 3D backgrounds (assuming these are components/files)
 const GridScan = dynamic(() => import('./components/GridScan'), { 
     ssr: false,
     loading: () => <div className="fixed inset-0 bg-black z-[-1]" />
@@ -29,86 +39,16 @@ const FloatingLines = dynamic(() => import('./components/FloatingLines'), {
     loading: () => <div className="absolute inset-0 bg-black" />
 });
 
-// --- NEW VANTA BACKGROUND IMPORT ---
 const VantaBackground = dynamic(() => import('./components/VantaBackground'), {
     ssr: false,
 });
 
 // --- 1. SHARED COMPONENTS & UTILS ---
-
-// FIX APPLIED HERE: Added explicit types to resolve 'implicitly has an any type' error
 const damp3 = (target: THREE.Vector3, to: [number, number, number], speed: number, delta: number) => {
     if (!target || !to) return;
     target.x += (to[0] - target.x) * speed * delta * 60;
     target.y += (to[1] - target.y) * speed * delta * 60;
     target.z += (to[2] - to[2]) * speed * delta * 60;
-};
-
-// (All other Page Components: SkillsPage, HoverCard, HomeSection, ProjectCard remain unchanged)
-// ... (Your components SkillsPage, HoverCard, HomeSection, ProjectCard remain here) ...
-
-
-// --- 3. PAGE COMPONENTS ---
-
-const SkillsPage = ({ goBack }: { goBack: () => void }) => {
-    // Updated Skills Data
-    const skills = [
-        { name: "Frontend", icon: LayoutTemplate, items: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Three.js", "Framer Motion"] },
-        { name: "Backend", icon: Server, items: ["Node.js", "Python", "PostgreSQL", "GraphQL", "Supabase", "FastAPI"] },
-        { name: "AI & ML", icon: Cpu, items: ["PyTorch", "TensorFlow", "NLP", "OpenCV", "Scikit-learn", "Keras"] },
-        { name: "IoT & Embedded", icon: Wifi, items: ["Arduino", "Raspberry Pi", "ESP32", "MQTT", "Sensors", "Automation"] }
-    ];
-
-    return (
-        <div className="fixed inset-0 z-50 bg-[#050505] overflow-hidden">
-            <button 
-                onClick={goBack}
-                className="cursor-target absolute top-6 left-6 z-[60] flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 pointer-events-auto"
-            >
-                <ArrowLeft size={20} /> Back to Home
-            </button>
-
-            {/* CONNECTED FLOATING LINES BACKGROUND */}
-            <div className="absolute inset-0 z-0">
-                <FloatingLines 
-                    enabledWaves={['top', 'middle', 'bottom']}
-                    lineCount={[9, 15, 9]}
-                    lineDistance={[8, 5, 8]}
-                    bendRadius={5.0}
-                    bendStrength={-0.5}
-                    interactive={true}
-                    parallax={true}
-                    linesGradient={['#a855f7', '#22d3ee', '#ec4899']}
-                    mouseDamping={0.01}
-                />
-                <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-            </div>
-
-            <div className="absolute inset-0 z-10 overflow-y-auto pointer-events-auto">
-                <div className="min-h-screen flex items-center justify-center p-6 md:p-20">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl w-full pt-[100px] pb-20">
-                        {skills.map((category, idx) => (
-                            <div key={idx} className="cursor-target group bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl hover:border-cyan-500/50 hover:scale-[1.02] hover:shadow-2xl hover:shadow-cyan-500/10 transition-all duration-300">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-400 group-hover:text-white group-hover:bg-cyan-500 transition-colors">
-                                        <category.icon size={24} />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-white">{category.name}</h3>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {category.items.map((item, i) => (
-                                        <span key={i} className="px-4 py-2 bg-white/5 rounded-full text-sm text-gray-300 border border-white/5 group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white transition-all">
-                                            {item}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
 };
 
 // --- HOVER CARD ---
@@ -153,7 +93,7 @@ const HomeSection = ({ id, onNavigate }: { id: string, onNavigate: (id: string) 
                     </h1>
 
                     <p className="max-w-2xl text-sm md:text-base text-gray-300 mb-10 leading-relaxed font-mono tracking-wide bg-black/40 backdrop-blur-md p-4 rounded-lg border-l-4 border-cyan-500">
-                        AI/ML Developer | Experienced in PyTorch, NLP, and Full-Stack Application Deployment.
+                        AI/ML Developer | Experienced in DL, and Full-Stack Application Deployment.
                     </p>
                     
                     <div className="flex flex-col sm:flex-row items-center justify-start gap-4 pointer-events-auto">
@@ -292,6 +232,14 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             videoUrl: "AI_Stock_Prediction_Video_Ready.mp4",
             codeUrl: "https://github.com/shishir-sh26/Stock-prediction", // Placeholder
             liveUrl: "https://github.com/shishir-sh26/Stock-prediction" // Placeholder
+        }, 
+        { 
+            title: "upcoming", 
+            desc: "tba", 
+            color: "from-orange-500 to-yellow-500",
+            videoUrl: "",
+            codeUrl: "https://github.com/shishir-sh26/", // Placeholder
+            liveUrl: "https://github.com/shishir-sh26/" // Placeholder
         }
     
     ];
@@ -336,7 +284,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <HoverCard 
                             title="AI & Machine Learning"
-                            desc="Developing state-of-the-art NLP models and computer vision systems using PyTorch and TensorFlow."
+                            desc="Developing state-of-art NLP models and computer vision systems using PyTorch and TensorFlow."
                             icon={Cpu}
                             color="from-cyan-500 to-blue-600"
                         />
@@ -455,23 +403,23 @@ const App = () => {
     const [currentPage, setCurrentPage] = useState('landing');
     const [activeSection, setActiveSection] = useState('home');
     const [scrolled, setScrolled] = useState(false);
-    // NEW STATE: Loading state
     const [isLoading, setIsLoading] = useState(true);
+    // ✅ NEW STATE: Mobile menu state
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    // ✅ NEW STATE: Track navigation status for loading overlays
+    const [isNavigating, setIsNavigating] = useState(false);
 
-    // ✅ NEW: Define the function required by LoadingScreen
+
     const handleLoaded = useCallback(() => {
         setIsLoading(false);
     }, []);
 
     useEffect(() => {
-        // Handle loading screen: Show for a minimum of 3 seconds (as a fallback)
         const timer = setTimeout(() => {
-            // Only force stop loading if it hasn't already been stopped by the LoadingScreen component
             if (isLoading) {
                 setIsLoading(false);
             }
-        }, 3500); // Slightly longer fallback time than the LoadingScreen's own timer
-
+        }, 3500); 
         return () => clearTimeout(timer);
     }, [isLoading]);
 
@@ -483,7 +431,6 @@ const App = () => {
                 const el = document.getElementById(section);
                 if (el) {
                     const rect = el.getBoundingClientRect();
-                    // Adjusted boundary check for better active section detection
                     if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
                         setActiveSection(section);
                         break;
@@ -492,10 +439,8 @@ const App = () => {
             }
         };
         
-        // Only attach scroll listener after loading is complete
         if (!isLoading) {
              window.addEventListener('scroll', handleScroll);
-             // Initial check
              handleScroll(); 
         }
 
@@ -504,19 +449,33 @@ const App = () => {
                 window.removeEventListener('scroll', handleScroll);
             }
         };
-    }, [isLoading]); // Rerun effect when loading status changes
+    }, [isLoading]); 
 
     const navigateTo = (page: string, sectionId?: string) => {
-        setCurrentPage(page);
-        if (sectionId) setActiveSection(sectionId);
-        if (page === 'landing' && sectionId) {
-            setTimeout(() => {
+        // Start navigation loading state
+        setIsNavigating(true);
+        setMobileMenuOpen(false); // Close menu on navigation
+
+        // Delay the actual navigation to show a loading/transition screen
+        const transitionDelay = 300; 
+
+        setTimeout(() => {
+            setCurrentPage(page);
+            if (sectionId) setActiveSection(sectionId);
+            
+            if (page === 'landing' && sectionId) {
                 const element = document.getElementById(sectionId);
                 if (element) element.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-        } else {
-            window.scrollTo(0, 0);
-        }
+            } else {
+                window.scrollTo(0, 0);
+            }
+            
+            // End navigation loading state after page content is rendered (or soon after)
+            setTimeout(() => {
+                setIsNavigating(false);
+            }, 100); 
+            
+        }, transitionDelay);
     };
 
     const NavLink = ({ label, targetId, onClick }: any) => (
@@ -531,15 +490,42 @@ const App = () => {
             {label}
         </button>
     );
+
+    const MobileNavLink = ({ label, targetId, page, onClick }: any) => (
+        <button
+            onClick={() => {
+                onClick(page, targetId);
+                setMobileMenuOpen(false);
+            }}
+            className={`cursor-target w-full text-left px-4 py-3 text-lg font-medium transition-all duration-300 rounded-lg ${
+                activeSection === targetId 
+                    ? 'text-cyan-400 bg-white/10' 
+                    : 'text-gray-200 hover:text-white hover:bg-white/5'
+            }`}
+        >
+            {label}
+        </button>
+    );
     
-    // CONDITIONAL RENDERING: Render LoadingScreen if loading is true
     if (isLoading) {
-        // ✅ FIX: Pass the required 'onLoaded' prop
         return <LoadingScreen onLoaded={handleLoaded} />;
     }
 
+    // ✅ NEW: Full-screen loading overlay for dynamic pages/navigation
+    const PageLoadingOverlay = (
+        <div className={`fixed inset-0 z-[100] bg-black transition-opacity duration-300 flex items-center justify-center ${isNavigating ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className="text-white text-3xl font-bold flex items-center gap-4">
+                <Terminal size={32} className="animate-pulse text-cyan-400" />
+                Loading Project Data...
+            </div>
+        </div>
+    );
+
+
     return (
         <div className="relative min-h-screen text-gray-200 font-sans selection:bg-cyan-500/30">
+            
+            {PageLoadingOverlay}
             
             {/* Custom Target Cursor */}
             <TargetCursor 
@@ -556,24 +542,22 @@ const App = () => {
 
             {/* Navigation - REORDERED: Home -> About -> Work -> Contact -> Skills */}
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-                scrolled ? 'py-4' : 'py-6'
+                scrolled || mobileMenuOpen ? 'py-4' : 'py-6'
             }`}>
                 <div className={`max-w-7xl mx-auto px-6 ${
-                    scrolled 
+                    scrolled || mobileMenuOpen
                         ? 'bg-black/60 backdrop-blur-xl border border-white/10 rounded-full py-3 shadow-2xl shadow-cyan-500/5' 
                         : 'bg-transparent border-transparent py-2'
                 } transition-all duration-300 flex items-center justify-between`}>
                     
                     <button 
                         className="cursor-target flex items-center gap-2 text-2xl font-bold tracking-tighter text-white hover:text-cyan-400 transition-colors z-50 cursor-pointer pointer-events-auto"
-                        onClick={() => {
-                            setCurrentPage('playground');
-                            setActiveSection('playground');
-                        }}
+                        onClick={() => navigateTo('playground', 'playground')}
                     >
                         DEV<span className="text-cyan-400">.</span>
                     </button>
                     
+                    {/* DESKTOP NAV */}
                     <div className="hidden md:flex space-x-1">
                         <NavLink label="Home" targetId="home" onClick={() => navigateTo('landing', 'home')} />
                         <NavLink label="About" targetId="about" onClick={() => navigateTo('landing', 'about')} />
@@ -582,18 +566,45 @@ const App = () => {
                         <NavLink label="Skills" targetId="skills" onClick={() => navigateTo('skills', 'skills')} />
                     </div>
 
-                    <button className="cursor-target md:hidden text-white p-2">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
+                    {/* MOBILE MENU TOGGLE */}
+                    <button 
+                        className="cursor-target md:hidden text-white p-2 z-50 pointer-events-auto"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    >
+                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
+                </div>
+
+                {/* ✅ MOBILE MENU DROPDOWN */}
+                <div className={`md:hidden absolute top-full left-0 right-0 z-40 p-4 transition-all duration-300 ${
+                    mobileMenuOpen
+                        ? 'opacity-100 translate-y-0'
+                        : 'opacity-0 -translate-y-4 pointer-events-none'
+                }`}>
+                    <div className="bg-black/80 backdrop-blur-lg border border-white/10 p-4 rounded-xl flex flex-col space-y-2">
+                        <MobileNavLink label="Home" targetId="home" page="landing" onClick={navigateTo} />
+                        <MobileNavLink label="About" targetId="about" page="landing" onClick={navigateTo} />
+                        <MobileNavLink label="Work" targetId="work" page="landing" onClick={navigateTo} />
+                        <MobileNavLink label="Contact" targetId="contact" page="landing" onClick={navigateTo} />
+                        <MobileNavLink label="Skills" targetId="skills" page="skills" onClick={navigateTo} />
+                        <MobileNavLink label="DEV." targetId="playground" page="playground" onClick={navigateTo} />
+                    </div>
                 </div>
             </nav>
 
             {/* Page Content */}
-            <main>
+            <main className={isNavigating ? 'opacity-50' : ''}>
                 {currentPage === 'landing' && <LandingPage onNavigate={(id) => navigateTo('landing', id)} />}
-                {currentPage === 'skills' && <SkillsPage goBack={() => navigateTo('landing', 'home')} />}
+                
+                {currentPage === 'skills' && (
+                    <Suspense fallback={
+                        <div className="fixed inset-0 z-50 bg-[#050505] flex items-center justify-center text-white text-xl">
+                            Loading Skills...
+                        </div>
+                    }>
+                        <LazySkillsPage goBack={() => navigateTo('landing', 'home')} />
+                    </Suspense>
+                )}
                 
                 {currentPage === 'playground' && (
                     <div className="fixed inset-0 z-[60] bg-[#050505]">
@@ -613,5 +624,4 @@ const App = () => {
 };
 
 // --- FINAL EXPORT ---
-// This exports the App component as the default component for the page.
 export default App;

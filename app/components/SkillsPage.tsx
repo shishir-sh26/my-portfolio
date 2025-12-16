@@ -22,7 +22,7 @@ const SkillsPage: React.FC<SkillsPageProps> = ({ goBack }) => {
 
     const skills = [
         { name: "Frontend", icon: LayoutTemplate, items: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Three.js", "Framer Motion", "Figma", "Angular","Vercel"] },
-        { name: "Backend", icon: Server, items: ["Node.js", "Python", "PostgreSQL", "GraphQL", "Supabase", "FastAPI", "Flask", "Docker"] },
+        { name: "Backend", icon: Server, items: ["Node.js", "Python", "PostgreSQL", "MySQL", "Supabase", "FastAPI", "Flask", "Docker", "MongoDB"] },
         { name: "AI & ML", icon: Cpu, items: ["PyTorch", "TensorFlow", "OpenCV"] },
         { name: "IoT & Embedded", icon: Wifi, items: ["Arduino", "Sensors", "Automation"] }
     ];

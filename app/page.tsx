@@ -284,7 +284,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <HoverCard 
                             title="AI & Machine Learning"
-                            desc="Developing state-of-art NLP models and computer vision systems using PyTorch and TensorFlow."
+                            desc="Developing state-of-art all models and computer vision systems using PyTorch and TensorFlow."
                             icon={Cpu}
                             color="from-cyan-500 to-blue-600"
                         />
@@ -516,7 +516,7 @@ const App = () => {
         <div className={`fixed inset-0 z-[100] bg-black transition-opacity duration-300 flex items-center justify-center ${isNavigating ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div className="text-white text-3xl font-bold flex items-center gap-4">
                 <Terminal size={32} className="animate-pulse text-cyan-400" />
-                Loading Project Data...
+                Loading...
             </div>
         </div>
     );

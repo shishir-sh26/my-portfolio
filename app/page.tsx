@@ -423,6 +423,9 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
                                 <a href="https://www.instagram.com/bwmmerc/" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-pink-500 hover:scale-110 transition-all duration-300">
                                     <Instagram size={24} />
                                 </a>
+                                <a href="https://www.kaggle.com/shishirkulal" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-blue-500 hover:scale-110 transition-all duration-300">
+                                    <span className="text-xl font-bold font-mono">k</span>
+                                </a>
                             </div>
                         </div>
                     </div>

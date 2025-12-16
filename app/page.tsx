@@ -259,7 +259,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             color: "from-purple-500 to-pink-500",
             videoUrl: "/D_Portfolio_Video_Generation.mp4",
             codeUrl: "https://github.com/shishir-sh26/my-portfolio", // Placeholder
-            liveUrl: "https://dev-shishir.com" // Placeholder
+            liveUrl: "https://my-portfolio-inky-six-23.vercel.app/" // Placeholder
         }, 
         { 
             title: "GenAI projects", 
@@ -267,7 +267,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             color: "from-red-500 to-pink-500",
             videoUrl: "GenAI_Project_Video_Generation.mp4",
             codeUrl: "https://github.com/shishir-sh26/GenAi", // Placeholder
-            liveUrl: "#" // Placeholder
+            liveUrl: "https://github.com/shishir-sh26/GenAi" // Placeholder
         }, 
         { 
             title: "Expense Tracker", 
@@ -275,7 +275,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             color: "from-green-500 to-blue-500",
             videoUrl: "Expense_Tracker_Video_Generation.mp4",
             codeUrl: "https://github.com/shishir-sh26/expense-tracker", // Placeholder
-            liveUrl: "#" // Placeholder
+            liveUrl: "https://github.com/shishir-sh26/expense-tracker" // Placeholder
         }, 
         { 
             title: "Blood Donation App", 
@@ -283,7 +283,15 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             color: "from-orange-500 to-yellow-500",
             videoUrl: "Blood_Donor_Search_Application.mp4",
             codeUrl: "https://github.com/shishir-sh26/-blooddonar", // Placeholder
-            liveUrl: "#" // Placeholder
+            liveUrl: "https://github.com/shishir-sh26/-blooddonar" // Placeholder
+        }, 
+        { 
+            title: "Stock-prediction", 
+            desc: "LSTM Stock Price Prediction Model for all stocks", 
+            color: "from-orange-500 to-yellow-500",
+            videoUrl: "AI_Stock_Prediction_Video_Ready.mp4",
+            codeUrl: "https://github.com/shishir-sh26/Stock-prediction", // Placeholder
+            liveUrl: "https://github.com/shishir-sh26/Stock-prediction" // Placeholder
         }
     
     ];
@@ -414,7 +422,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
                                 <Send size={20} /> Send Message
                             </a>
                             <div className="flex justify-center gap-6">
-                                <a href="https://github.com/shishir-sh26" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-cyan-400 hover:scale-110 transition-all duration-300">
+                                <a href="https://github.com/shishir-sh26" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-black hover:scale-110 transition-all duration-300">
                                     <Github size={24} />
                                 </a>
                                 <a href="https://www.linkedin.com/in/shishir-r-kulal-4757a9296?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener noreferrer" className="cursor-target p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:text-cyan-400 hover:scale-110 transition-all duration-300">

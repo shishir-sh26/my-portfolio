@@ -232,12 +232,20 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             videoUrl: "AI_Stock_Prediction_Video_Ready.mp4",
             codeUrl: "https://github.com/shishir-sh26/Stock-prediction", // Placeholder
             liveUrl: "https://github.com/shishir-sh26/Stock-prediction" // Placeholder
-        }, 
+        },
+        { 
+            title: "ML-Projects open source", 
+            desc: "All types of ML prjects in one repo", 
+            color: "from-orange-500 to-yellow-500",
+            videoUrl: "ML_Projects_GitHub_Video.mp4",
+            codeUrl: "https://github.com/shishir-sh26/ML-projects", // Placeholder
+            liveUrl: "https://github.com/shishir-sh26/ML-projects" // Placeholder
+        },  
         { 
             title: "upcoming", 
             desc: "tba", 
             color: "from-orange-500 to-yellow-500",
-            videoUrl: "",
+            videoUrl: "Video_Generation_Confirmation.mp4",
             codeUrl: "https://github.com/shishir-sh26/", // Placeholder
             liveUrl: "https://github.com/shishir-sh26/" // Placeholder
         }

@@ -11,7 +11,6 @@ import {
     Cpu, Globe, Zap, Send, Instagram, Wifi, Menu, X // ADDED: Menu and X icons
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { Analytics } from "@vercel/analytics/next"
 
 // --- IMPORTS ---
 import PlaygroundPage from './components/PlaygroundPage';
@@ -619,7 +618,6 @@ const App = () => {
                     </div>
                 )}
             </main>
-            <Analytics />
         </div>
     );
 };

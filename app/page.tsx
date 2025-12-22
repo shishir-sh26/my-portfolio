@@ -192,6 +192,14 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             codeUrl: "https://github.com/shishir-sh26/agrisense", // Placeholder
             liveUrl: "https://shrinidhianchan.github.io/ai-plant-based-agrisense/" // Placeholder
         },
+        { 
+            title: "WarRoom", 
+            desc: "War Room is a real-time command center designed for hackathons and rapid development sprints.", 
+            color: "from-orange-500 to-yellow-500",
+            videoUrl: "WarRoom_Hackathon_Collaboration_Dashboard_Video.mp4",
+            codeUrl: "https://github.com/shishir-sh26/H-TeamState", // Placeholder
+            liveUrl: "https://h-teamstate.vercel.app/" // Placeholder
+        },
         
         { 
             title: "GenAI projects", 
@@ -232,14 +240,6 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             videoUrl: "ML_Projects_GitHub_Video.mp4",
             codeUrl: "https://github.com/shishir-sh26/ML-projects", // Placeholder
             liveUrl: "https://github.com/shishir-sh26/ML-projects" // Placeholder
-        },  
-        { 
-            title: "upcoming", 
-            desc: "tba", 
-            color: "from-orange-500 to-yellow-500",
-            videoUrl: "Video_Generation_Confirmation.mp4",
-            codeUrl: "https://github.com/shishir-sh26/", // Placeholder
-            liveUrl: "https://github.com/shishir-sh26/" // Placeholder
         }
     
     ];

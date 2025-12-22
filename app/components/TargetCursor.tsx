@@ -28,6 +28,9 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
   const tickerFnRef = useRef<(() => void) | null>(null);
   const activeStrengthRef = useRef({ current: 0 });
 
+  // --- ADD CLICK SOUND ---
+  const clickSound = useMemo(() => new Audio('/click.mp3'), []);
+
   const isMobile = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -135,6 +138,10 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
       if (!dotRef.current) return;
       gsap.to(dotRef.current, { scale: 0.7, duration: 0.3 });
       gsap.to(cursorRef.current, { scale: 0.9, duration: 0.2 });
+
+      // --- PLAY CLICK SOUND ---
+      clickSound.currentTime = 0; // reset for rapid clicks
+      clickSound.play().catch(() => {});
     };
 
     const mouseUpHandler = () => {
@@ -213,7 +220,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
           const positions = [
             { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
             { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
-            { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+            { x: cornerSize * 0.5, y: 0.5 * cornerSize },
             { x: -cornerSize * 1.5, y: cornerSize * 0.5 }
           ];
           const tl = gsap.timeline();
@@ -266,7 +273,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
       targetCornerPositionsRef.current = null;
       activeStrengthRef.current.current = 0;
     };
-  }, [targetSelector, spinDuration, moveCursor, constants, hideDefaultCursor, isMobile, hoverDuration, parallaxOn]);
+  }, [targetSelector, spinDuration, moveCursor, constants, hideDefaultCursor, isMobile, hoverDuration, parallaxOn, clickSound]);
 
   if (isMobile) {
     return null;

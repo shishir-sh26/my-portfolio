@@ -199,15 +199,6 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             videoUrl: "WarRoom_Hackathon_Collaboration_Dashboard_Video.mp4",
             codeUrl: "https://github.com/shishir-sh26/H-TeamState", // Placeholder
             liveUrl: "https://h-teamstate.vercel.app/" // Placeholder
-        },
-        
-        { 
-            title: "GenAI projects", 
-            desc: "Collection of GenAI Projects.", 
-            color: "from-red-500 to-pink-500",
-            videoUrl: "GenAI_Project_Video_Generation.mp4",
-            codeUrl: "https://github.com/shishir-sh26/GenAi", // Placeholder
-            liveUrl: "https://github.com/shishir-sh26/GenAi" // Placeholder
         }, 
         { 
             title: "Expense Tracker", 
@@ -232,14 +223,6 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             videoUrl: "AI_Stock_Prediction_Video_Ready.mp4",
             codeUrl: "https://github.com/shishir-sh26/Stock-prediction", // Placeholder
             liveUrl: "https://github.com/shishir-sh26/Stock-prediction" // Placeholder
-        },
-        { 
-            title: "ML-Projects open source", 
-            desc: "All types of ML prjects in one repo", 
-            color: "from-orange-500 to-yellow-500",
-            videoUrl: "ML_Projects_GitHub_Video.mp4",
-            codeUrl: "https://github.com/shishir-sh26/ML-projects", // Placeholder
-            liveUrl: "https://github.com/shishir-sh26/ML-projects" // Placeholder
         }
     
     ];
@@ -323,6 +306,7 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             </section>
             
             {/* 3. PROJECTS SECTION (Formerly Work) - MODIFIED */}
+           {/* 3. PROJECTS SECTION (Formerly Work) - MODIFIED */}
             <section id="work" className="py-24 relative">
                 <div className="max-w-7xl mx-auto px-6 relative z-10">
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
@@ -331,12 +315,35 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
                             <p className="text-gray-400 max-w-md">A selection of my recent technical work and experiments.</p>
                         </div>
                     </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {/* ITERATE OVER THE NEW PROJECTS ARRAY AND USE THE NEW CARD COMPONENT */}
                         {projects.map((project, i) => (
                             <ProjectCard key={i} project={project} />
                         ))}
                     </div>
+                    {/* --- ADD THIS NEW BOX BELOW --- */}
+                    {/* --- REPOSITORIES SECTION --- */}
+        <div className="mt-20 flex flex-col items-center justify-center text-center">
+            <p className="text-gray-400 mb-6 text-lg font-medium">
+                For more projects and code samples, visit my GitHub:
+            </p>
+            
+            <a 
+                href="https://github.com/shishir-sh26?tab=repositories" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="cursor-target group flex items-center gap-3 px-8 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300"
+            >
+                <Github size={20} className="group-hover:text-cyan-400 transition-colors" />
+                <span className="text-gray-200 font-semibold tracking-wide">
+                    Repositories
+                </span>
+                <ExternalLink size={14} className="text-gray-500 group-hover:text-cyan-400" />
+            </a>
+        </div>
+                    {/* --- END OF NEW BOX --- */}
+
                 </div>
             </section>
 

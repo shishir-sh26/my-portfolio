@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Canvas, extend, useFrame, useThree } from '@react-three/fiber';
-import { Environment, Lightformer, Text } from '@react-three/drei';
+import { Canvas, extend, useFrame } from '@react-three/fiber';
+import { Environment, Text } from '@react-three/drei';
 import {
     BallCollider,
     CuboidCollider,
@@ -10,7 +10,6 @@ import {
     RigidBody,
     useRopeJoint,
     useSphericalJoint,
-    RigidBodyProps
 } from '@react-three/rapier';
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
 import * as THREE from 'three';
@@ -47,12 +46,12 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
     };
 
     const curve = useMemo(() => new THREE.CatmullRomCurve3([
-        new THREE.Vector3(), 
-        new THREE.Vector3(), 
-        new THREE.Vector3(), 
+        new THREE.Vector3(),
+        new THREE.Vector3(),
+        new THREE.Vector3(),
         new THREE.Vector3()
     ]), []);
-    
+
     const [dragged, drag] = useState<false | THREE.Vector3>(false);
     const [hovered, hover] = useState(false);
 
@@ -69,8 +68,8 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
         if (dragged && card.current) {
             vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
             dir.copy(vec).sub(state.camera.position).normalize();
-            vec.add(dir.multiplyScalar(state.camera.position.length() * 0.4)); 
-            
+            vec.add(dir.multiplyScalar(state.camera.position.length() * 0.4));
+
             [card, j1, j2, j3, fixed].forEach(ref => ref.current?.wakeUp());
             card.current.setNextKinematicTranslation({
                 x: vec.x - dragged.x,
@@ -78,7 +77,7 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
                 z: vec.z - dragged.z
             });
         }
-        
+
         if (fixed.current && j1.current && j2.current && j3.current) {
             [j1, j2].forEach(ref => {
                 if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
@@ -88,14 +87,14 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
                     delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
                 );
             });
-            
+
             curve.points[0].copy(j3.current.translation());
             curve.points[1].copy(j2.current.lerped);
             curve.points[2].copy(j1.current.lerped);
             curve.points[3].copy(fixed.current.translation());
-            
+
             band.current.geometry.setPoints(curve.getPoints(32));
-            
+
             ang.copy(card.current.angvel());
             rot.copy(card.current.rotation());
             card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
@@ -127,7 +126,7 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
                             drag(false);
                         }}
                         onPointerDown={(e: any) => {
-                            if (e.button === 2) { 
+                            if (e.button === 2) {
                                 e.target.setPointerCapture(e.pointerId);
                                 drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
                             }
@@ -155,12 +154,10 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const maskRef = useRef<HTMLDivElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
-    const lastPoint = useRef<{x: number, y: number} | null>(null);
+    const lastPoint = useRef<{ x: number, y: number } | null>(null);
 
     const updateMask = useCallback(() => {
         if (!canvasRef.current || !maskRef.current) return;
-        // Optimization: Use the canvas directly as a mask source via dataURL
-        // To make it "lagless", we only update on changes
         const url = canvasRef.current.toDataURL();
         maskRef.current.style.WebkitMaskImage = `url(${url})`;
         maskRef.current.style.maskImage = `url(${url})`;
@@ -187,8 +184,8 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
             if (ctx) {
                 ctx.fillStyle = 'white';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.globalCompositeOperation = 'destination-out'; 
-                ctx.lineWidth = 50; 
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 50;
                 ctx.lineCap = 'round';
                 updateMask();
             }
@@ -196,7 +193,7 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
     }, [updateMask]);
 
     return (
-        <div 
+        <div
             className="w-full h-screen relative bg-black"
             onMouseMove={(e) => isDrawing && draw(e.clientX, e.clientY)}
             onMouseDown={(e) => {

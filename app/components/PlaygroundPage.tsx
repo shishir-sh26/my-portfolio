@@ -92,7 +92,9 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
             curve.points[2].copy(j1.current.lerped);
             curve.points[3].copy(fixed.current.translation());
 
-            band.current.geometry.setPoints(curve.getPoints(32));
+            if (band.current) {
+                band.current.geometry.setPoints(curve.getPoints(32));
+            }
 
             ang.copy(card.current.angvel());
             rot.copy(card.current.rotation());
@@ -211,8 +213,14 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
                 style={{ WebkitMaskSize: '100% 100%', maskSize: '100% 100%' }}
             />
             <canvas ref={canvasRef} className="hidden" />
+            
+            {/* 3D Content Wrapper */}
             <div className="absolute inset-0 z-20 pointer-events-none">
-                <Canvas camera={{ position: [0, 0, 20], fov: 20 }} eventSource={maskRef as any} pointerEvents="auto">
+                <Canvas 
+                    camera={{ position: [0, 0, 20], fov: 20 }} 
+                    eventSource={maskRef as any}
+                    style={{ pointerEvents: 'auto' }} // Use style prop for pointer events
+                >
                     <ambientLight intensity={2} />
                     <Physics gravity={[0, -30, 0]}>
                         <Band />
@@ -220,6 +228,7 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
                     <Environment preset="city" />
                 </Canvas>
             </div>
+
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/40 text-xs uppercase tracking-widest pointer-events-none z-30">
                 Left-Click Scratch • Right-Click Drag Card
             </div>

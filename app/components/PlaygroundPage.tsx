@@ -23,7 +23,6 @@ declare module '@react-three/fiber' {
     }
 }
 
-// --- LANYARD COMPONENT ---
 function Band({ maxSpeed = 50, minSpeed = 10 }) {
     const band = useRef<any>(null);
     const fixed = useRef<any>(null);
@@ -149,7 +148,6 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
     );
 }
 
-// --- OPTIMIZED SCRATCH-OFF ---
 function ScratchOff({ imageUrl }: { imageUrl: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const maskRef = useRef<HTMLDivElement>(null);
@@ -159,8 +157,9 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
     const updateMask = useCallback(() => {
         if (!canvasRef.current || !maskRef.current) return;
         const url = canvasRef.current.toDataURL();
-        maskRef.current.style.WebkitMaskImage = `url(${url})`;
-        maskRef.current.style.maskImage = `url(${url})`;
+        const style = maskRef.current.style as any;
+        style.webkitMaskImage = `url(${url})`;
+        style.maskImage = `url(${url})`;
     }, []);
 
     const draw = (x: number, y: number) => {
@@ -205,19 +204,13 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
             onMouseUp={() => setIsDrawing(false)}
             onContextMenu={(e) => e.preventDefault()}
         >
-            {/* Background revealed image */}
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }} />
-
-            {/* The Scratch Layer */}
             <div
                 ref={maskRef}
                 className="absolute inset-0 z-10 bg-[#0a0a0a]"
                 style={{ WebkitMaskSize: '100% 100%', maskSize: '100% 100%' }}
             />
-
             <canvas ref={canvasRef} className="hidden" />
-
-            {/* 3D Content */}
             <div className="absolute inset-0 z-20 pointer-events-none">
                 <Canvas camera={{ position: [0, 0, 20], fov: 20 }} eventSource={maskRef as any} pointerEvents="auto">
                     <ambientLight intensity={2} />
@@ -227,7 +220,6 @@ function ScratchOff({ imageUrl }: { imageUrl: string }) {
                     <Environment preset="city" />
                 </Canvas>
             </div>
-
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/40 text-xs uppercase tracking-widest pointer-events-none z-30">
                 Left-Click Scratch • Right-Click Drag Card
             </div>

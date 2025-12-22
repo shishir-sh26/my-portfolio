@@ -192,15 +192,8 @@ const LandingPage = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
             videoUrl: "/agrisense.mp4",
             codeUrl: "https://github.com/shishir-sh26/agrisense", // Placeholder
             liveUrl: "https://shrinidhianchan.github.io/ai-plant-based-agrisense/" // Placeholder
-        }, 
-        { 
-            title: "3D Portfolio", 
-            desc: "An immersive, responsive 3D web experience built with Next.js, Three.js, and React-Three-Fiber.", 
-            color: "from-purple-500 to-pink-500",
-            videoUrl: "/D_Portfolio_Video_Generation.mp4",
-            codeUrl: "https://github.com/shishir-sh26/my-portfolio", // Placeholder
-            liveUrl: "https://my-portfolio-inky-six-23.vercel.app/" // Placeholder
-        }, 
+        },
+        
         { 
             title: "GenAI projects", 
             desc: "Collection of GenAI Projects.", 
@@ -626,7 +619,7 @@ const App = () => {
                     </div>
                 )}
             </main>
-
+            <Analytics />
         </div>
     );
 };
